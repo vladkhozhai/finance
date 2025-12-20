@@ -110,9 +110,9 @@ export async function signUp(data: SignUpInput) {
   // Note: Profile is automatically created by database trigger (handle_new_user)
   // The trigger reads currency from raw_user_meta_data
 
-  // Revalidate and redirect on success
+  // Revalidate and redirect on success to login with confirmation notice
   revalidatePath("/", "layout");
-  redirect("/");
+  redirect("/login?confirmed=pending");
 }
 
 /**

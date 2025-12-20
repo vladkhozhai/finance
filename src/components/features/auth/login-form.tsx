@@ -10,12 +10,14 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { AlertCircle } from "lucide-react";
 import Link from "next/link";
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import { signIn } from "@/app/actions/auth";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -37,6 +39,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 export function LoginForm() {
   const [isPending, startTransition] = useTransition();
+  const [serverError, setServerError] = useState<string | null>(null);
 
   const {
     register,
@@ -47,11 +50,15 @@ export function LoginForm() {
   });
 
   const onSubmit = (data: LoginFormData) => {
+    // Clear previous errors
+    setServerError(null);
+
     startTransition(async () => {
       try {
         const result = await signIn(data);
 
         if (!result.success) {
+          setServerError(result.error);
           toast.error("Login failed", {
             description: result.error,
           });
@@ -62,8 +69,10 @@ export function LoginForm() {
         if (error instanceof Error && error.message.includes("NEXT_REDIRECT")) {
           return;
         }
+        const errorMessage = "An unexpected error occurred. Please try again.";
+        setServerError(errorMessage);
         toast.error("Login failed", {
-          description: "An unexpected error occurred. Please try again.",
+          description: errorMessage,
         });
       }
     });
@@ -77,6 +86,13 @@ export function LoginForm() {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          {serverError && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{serverError}</AlertDescription>
+            </Alert>
+          )}
+
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input

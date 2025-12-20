@@ -18,7 +18,10 @@
  * 5. Return null if no rate available
  */
 
-import { createClient as createServerClient, createAdminClient } from "@/lib/supabase/server";
+import {
+  createClient as createServerClient,
+  createAdminClient,
+} from "@/lib/supabase/server";
 import type { Database } from "@/types/database.types";
 
 // Type for exchange rate API response from exchangerate-api.com

@@ -1,0 +1,29 @@
+{
+  "mcpServers": {
+    "trello": {
+      "command": "npx",
+      "args": ["-y", "@delorenj/mcp-server-trello"],
+      "env": {
+        "TRELLO_API_KEY": "565547648cc69fc09b3343068cca8212",
+        "TRELLO_TOKEN": "ATTAb60ef01d7280bdd04739982f382056fc4aa5928e9b183ae9809b527bab56ce490FC909D4"
+      }
+    },
+    "supabase": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@supabase/mcp-server-supabase@latest",
+        "--access-token",
+        "sbp_7c5b11083164474a180d170a81ad1c4f25309ada"
+      ]
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["@playwright/mcp@latest"]
+    },
+    "chrome-devtools": {
+      "command": "npx",
+      "args": ["-y", "chrome-devtools-mcp@latest"]
+    }
+  }
+}

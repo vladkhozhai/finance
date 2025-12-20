@@ -1,0 +1,156 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e4]:
+      - generic [ref=e5]:
+        - heading "FinanceFlow" [level=1] [ref=e7]
+        - navigation "Main navigation" [ref=e8]:
+          - link "Dashboard" [ref=e9] [cursor=pointer]:
+            - /url: /
+          - link "Transactions" [ref=e10] [cursor=pointer]:
+            - /url: /transactions
+          - link "Budgets" [ref=e11] [cursor=pointer]:
+            - /url: /budgets
+          - link "Profile" [ref=e12] [cursor=pointer]:
+            - /url: /profile
+            - img [ref=e13]
+            - text: Profile
+        - generic [ref=e16]:
+          - button "Add transaction" [ref=e17]:
+            - img [ref=e18]
+            - generic [ref=e20]: Add Transaction
+          - button "User menu" [ref=e21]:
+            - img
+            - generic [ref=e22]: test-1766154684150@example.com
+    - main [ref=e23]:
+      - generic [ref=e24]:
+        - complementary [ref=e25]:
+          - generic [ref=e26]:
+            - generic [ref=e27]:
+              - heading "Profile & Settings" [level=2] [ref=e28]
+              - paragraph [ref=e29]: Manage your account
+            - navigation [ref=e30]:
+              - link "Overview" [ref=e31] [cursor=pointer]:
+                - /url: /profile/overview
+                - img [ref=e32]
+                - generic [ref=e35]: Overview
+              - link "Payment Methods" [ref=e36] [cursor=pointer]:
+                - /url: /profile/payment-methods
+                - img [ref=e37]
+                - generic [ref=e39]: Payment Methods
+              - link "Categories" [ref=e40] [cursor=pointer]:
+                - /url: /profile/categories
+                - img [ref=e41]
+                - generic [ref=e43]: Categories
+              - link "Tags" [ref=e44] [cursor=pointer]:
+                - /url: /profile/tags
+                - img [ref=e45]
+                - generic [ref=e48]: Tags
+              - link "Preferences" [ref=e49] [cursor=pointer]:
+                - /url: /profile/preferences
+                - img [ref=e50]
+                - generic [ref=e53]: Preferences
+        - main [ref=e54]:
+          - generic [ref=e55]:
+            - generic [ref=e56]:
+              - heading "Overview" [level=1] [ref=e57]
+              - paragraph [ref=e58]: Your account summary and statistics
+            - generic [ref=e59]:
+              - generic [ref=e60]:
+                - heading "Account Information" [level=3] [ref=e61]
+                - generic [ref=e62]: Your personal details and settings
+              - generic [ref=e64]:
+                - generic [ref=e65]:
+                  - paragraph [ref=e66]: Email Address
+                  - paragraph [ref=e67]: test-1766154684150@example.com
+                - generic [ref=e68]:
+                  - paragraph [ref=e69]: Default Currency
+                  - paragraph [ref=e70]: USD
+                - generic [ref=e71]:
+                  - paragraph [ref=e72]: Account Age
+                  - paragraph [ref=e73]: 0 days
+                - generic [ref=e74]:
+                  - paragraph [ref=e75]: Member Since
+                  - paragraph [ref=e76]: 12/19/2025
+            - generic [ref=e77]:
+              - heading "Your Statistics" [level=2] [ref=e78]
+              - generic [ref=e79]:
+                - generic [ref=e80]:
+                  - generic [ref=e81]:
+                    - heading "Total Balance" [level=3] [ref=e82]
+                    - img [ref=e83]
+                  - generic [ref=e86]:
+                    - generic [ref=e87]: USD 0.00
+                    - paragraph [ref=e88]: Across all accounts
+                - generic [ref=e89]:
+                  - generic [ref=e90]:
+                    - heading "Total Transactions" [level=3] [ref=e91]
+                    - img [ref=e92]
+                  - generic [ref=e94]:
+                    - generic [ref=e95]: "0"
+                    - paragraph [ref=e96]: Income and expenses
+                - generic [ref=e97]:
+                  - generic [ref=e98]:
+                    - heading "Categories" [level=3] [ref=e99]
+                    - img [ref=e100]
+                  - generic [ref=e102]:
+                    - generic [ref=e103]: "0"
+                    - paragraph [ref=e104]: Active categories
+                - generic [ref=e105]:
+                  - generic [ref=e106]:
+                    - heading "Tags" [level=3] [ref=e107]
+                    - img [ref=e108]
+                  - generic [ref=e111]:
+                    - generic [ref=e112]: "0"
+                    - paragraph [ref=e113]: Custom labels
+                - generic [ref=e114]:
+                  - generic [ref=e115]:
+                    - heading "Active Budgets" [level=3] [ref=e116]
+                    - img [ref=e117]
+                  - generic [ref=e120]:
+                    - generic [ref=e121]: "0"
+                    - paragraph [ref=e122]: Budget trackers
+            - generic [ref=e123]:
+              - generic [ref=e124]:
+                - heading "Quick Actions" [level=3] [ref=e125]
+                - generic [ref=e126]: Jump to common settings and management pages
+              - generic [ref=e127]:
+                - link "Manage Payment Methods Add or edit your cards and accounts" [ref=e128] [cursor=pointer]:
+                  - /url: /profile/payment-methods
+                  - generic [ref=e129]:
+                    - img
+                    - generic [ref=e130]:
+                      - generic [ref=e131]: Manage Payment Methods
+                      - generic [ref=e132]: Add or edit your cards and accounts
+                  - img
+                - link "Organize Categories Customize your transaction categories" [ref=e133] [cursor=pointer]:
+                  - /url: /profile/categories
+                  - generic [ref=e134]:
+                    - img
+                    - generic [ref=e135]:
+                      - generic [ref=e136]: Organize Categories
+                      - generic [ref=e137]: Customize your transaction categories
+                  - img
+                - link "Manage Tags Create flexible labels for transactions" [ref=e138] [cursor=pointer]:
+                  - /url: /profile/tags
+                  - generic [ref=e139]:
+                    - img
+                    - generic [ref=e140]:
+                      - generic [ref=e141]: Manage Tags
+                      - generic [ref=e142]: Create flexible labels for transactions
+                  - img
+                - link "Change Preferences Update currency and app settings" [ref=e143] [cursor=pointer]:
+                  - /url: /profile/preferences
+                  - generic [ref=e144]:
+                    - img
+                    - generic [ref=e145]:
+                      - generic [ref=e146]: Change Preferences
+                      - generic [ref=e147]: Update currency and app settings
+                  - img
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e153] [cursor=pointer]:
+    - img [ref=e154]
+  - alert [ref=e157]
+```

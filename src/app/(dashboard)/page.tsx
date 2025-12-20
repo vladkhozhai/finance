@@ -10,6 +10,9 @@
  * Server Component - fetches data and passes to client components
  */
 
+// Force dynamic rendering - page uses cookies() for auth
+export const dynamic = "force-dynamic";
+
 import { Suspense } from "react";
 import { getPaymentMethodBalancesWithDetails } from "@/app/actions/dashboard";
 import {

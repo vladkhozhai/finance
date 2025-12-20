@@ -5,6 +5,9 @@
  * Shows real data: total transactions, categories, tags, budgets, and balance.
  */
 
+// Force dynamic rendering - page uses cookies() for auth
+export const dynamic = "force-dynamic";
+
 import {
   ArrowRight,
   CreditCard,

@@ -7,6 +7,9 @@
  * - Other app preferences
  */
 
+// Force dynamic rendering - page uses cookies() for auth
+export const dynamic = "force-dynamic";
+
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { PreferencesForm } from "./preferences-form";

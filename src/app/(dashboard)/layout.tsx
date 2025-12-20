@@ -6,6 +6,9 @@
  * Applies to all pages in the (dashboard) route group.
  */
 
+// Force dynamic rendering - layout uses cookies() for auth
+export const dynamic = "force-dynamic";
+
 import { redirect } from "next/navigation";
 import { AppHeader } from "@/components/layout/app-header";
 import { MainNav } from "@/components/layout/main-nav";

@@ -70,10 +70,15 @@ export function validateEnvironment(): EnvValidationResult {
     );
   }
 
+  // Check if using local Supabase (skip JWT validation for local development)
+  const isLocalSupabase =
+    supabaseUrl?.includes("127.0.0.1") || supabaseUrl?.includes("localhost");
+
   // Validate NEXT_PUBLIC_SUPABASE_ANON_KEY
   if (!supabaseAnonKey) {
     errors.push("NEXT_PUBLIC_SUPABASE_ANON_KEY is not set");
-  } else if (!isValidJwt(supabaseAnonKey)) {
+  } else if (!isLocalSupabase && !isValidJwt(supabaseAnonKey)) {
+    // Only enforce JWT format for production Supabase instances
     errors.push("NEXT_PUBLIC_SUPABASE_ANON_KEY is not a valid JWT token");
   }
 
@@ -82,7 +87,8 @@ export function validateEnvironment(): EnvValidationResult {
     errors.push(
       "SUPABASE_SERVICE_ROLE_KEY is not set (required for admin operations)",
     );
-  } else if (!isValidJwt(supabaseServiceKey)) {
+  } else if (!isLocalSupabase && !isValidJwt(supabaseServiceKey)) {
+    // Only enforce JWT format for production Supabase instances
     errors.push("SUPABASE_SERVICE_ROLE_KEY is not a valid JWT token");
   }
 

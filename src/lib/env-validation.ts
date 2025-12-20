@@ -39,12 +39,29 @@ function isValidUrl(url: string): boolean {
 }
 
 /**
- * Validates a JWT token format (basic check)
+ * Validates a Supabase key format
+ * Accepts both:
+ * - Legacy JWT format: header.payload.signature (3 parts separated by dots)
+ * - New publishable key format: sb_publishable_... or eyJ... (base64-like)
  */
-function isValidJwt(token: string): boolean {
-  // JWT format: header.payload.signature (3 parts separated by dots)
+function isValidSupabaseKey(token: string): boolean {
+  // New Supabase publishable key format (sb_publishable_...)
+  if (token.startsWith("sb_publishable_") || token.startsWith("sb_secret_")) {
+    return token.length > 20; // Basic length check
+  }
+
+  // Legacy JWT format: header.payload.signature (3 parts separated by dots)
   const parts = token.split(".");
-  return parts.length === 3 && parts.every((part) => part.length > 0);
+  if (parts.length === 3 && parts.every((part) => part.length > 0)) {
+    return true;
+  }
+
+  // Also accept base64-like keys that start with eyJ (JWT header)
+  if (token.startsWith("eyJ") && token.length > 50) {
+    return true;
+  }
+
+  return false;
 }
 
 /**
@@ -77,9 +94,11 @@ export function validateEnvironment(): EnvValidationResult {
   // Validate NEXT_PUBLIC_SUPABASE_ANON_KEY
   if (!supabaseAnonKey) {
     errors.push("NEXT_PUBLIC_SUPABASE_ANON_KEY is not set");
-  } else if (!isLocalSupabase && !isValidJwt(supabaseAnonKey)) {
-    // Only enforce JWT format for production Supabase instances
-    errors.push("NEXT_PUBLIC_SUPABASE_ANON_KEY is not a valid JWT token");
+  } else if (!isLocalSupabase && !isValidSupabaseKey(supabaseAnonKey)) {
+    // Only enforce key format for production Supabase instances
+    errors.push(
+      "NEXT_PUBLIC_SUPABASE_ANON_KEY is not a valid Supabase key (expected JWT or sb_publishable_... format)",
+    );
   }
 
   // Validate SUPABASE_SERVICE_ROLE_KEY (server-only)
@@ -87,9 +106,11 @@ export function validateEnvironment(): EnvValidationResult {
     errors.push(
       "SUPABASE_SERVICE_ROLE_KEY is not set (required for admin operations)",
     );
-  } else if (!isLocalSupabase && !isValidJwt(supabaseServiceKey)) {
-    // Only enforce JWT format for production Supabase instances
-    errors.push("SUPABASE_SERVICE_ROLE_KEY is not a valid JWT token");
+  } else if (!isLocalSupabase && !isValidSupabaseKey(supabaseServiceKey)) {
+    // Only enforce key format for production Supabase instances
+    errors.push(
+      "SUPABASE_SERVICE_ROLE_KEY is not a valid Supabase key (expected JWT or sb_secret_... format)",
+    );
   }
 
   // Validate optional but recommended variables

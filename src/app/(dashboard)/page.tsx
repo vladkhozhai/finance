@@ -39,13 +39,13 @@ export default async function DashboardPage() {
     .from("profiles")
     .select("currency")
     .eq("id", user.id)
-    .single();
+    .maybeSingle() as { data: { currency: string } | null };
 
   const currency = profile?.currency || "USD";
 
   // Fetch active budgets with category/tag info
   const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM format
-  const { data: budgets } = await supabase
+  const { data: budgets } = (await supabase
     .from("budgets")
     .select(
       `
@@ -59,7 +59,17 @@ export default async function DashboardPage() {
     `,
     )
     .eq("user_id", user.id)
-    .eq("period", `${currentMonth}-01`);
+    .eq("period", `${currentMonth}-01`)) as {
+    data: Array<{
+      id: string;
+      amount: number;
+      category_id: string | null;
+      tag_id: string | null;
+      period: string;
+      categories: { name: string; color: string } | null;
+      tags: { name: string } | null;
+    }> | null;
+  };
 
   // Calculate spent amount for each budget
   const budgetsWithSpent = await Promise.all(
@@ -68,21 +78,27 @@ export default async function DashboardPage() {
 
       if (budget.category_id) {
         // Budget for category
-        const { data: categoryTransactions } = await supabase
+        const { data: categoryTransactions } = (await supabase
           .from("transactions")
           .select("amount")
           .eq("user_id", user.id)
           .eq("category_id", budget.category_id)
-          .gte("date", budget.period);
+          .gte("date", budget.period)) as {
+          data: Array<{ amount: number }> | null;
+        };
 
         spent =
           categoryTransactions?.reduce((sum, t) => sum + t.amount, 0) || 0;
       } else if (budget.tag_id) {
         // Budget for tag
-        const { data: tagTransactions } = await supabase
+        const { data: tagTransactions } = (await supabase
           .from("transaction_tags")
           .select("transactions(amount, date)")
-          .eq("tag_id", budget.tag_id);
+          .eq("tag_id", budget.tag_id)) as {
+          data: Array<{
+            transactions: { amount: number; date: string } | null;
+          }> | null;
+        };
 
         spent =
           tagTransactions
@@ -104,10 +120,16 @@ export default async function DashboardPage() {
   );
 
   // Fetch expense breakdown by category
-  const { data: expenseTransactions } = await supabase
+  const { data: expenseTransactions } = (await supabase
     .from("transactions")
     .select("amount, category_id, categories(name, color, type)")
-    .eq("user_id", user.id);
+    .eq("user_id", user.id)) as {
+    data: Array<{
+      amount: number;
+      category_id: string | null;
+      categories: { name: string; color: string; type: string } | null;
+    }> | null;
+  };
 
   // Group expenses by category
   const categoryExpenses = (expenseTransactions || [])

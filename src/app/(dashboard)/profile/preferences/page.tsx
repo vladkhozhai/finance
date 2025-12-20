@@ -24,11 +24,13 @@ export default async function PreferencesPage() {
   }
 
   // Get user profile
-  const { data: profile } = await supabase
+  const { data: profile } = (await supabase
     .from("profiles")
     .select("*")
     .eq("id", user.id)
-    .single();
+    .single()) as {
+    data: { currency: string } | null;
+  };
 
   return (
     <div className="space-y-8">

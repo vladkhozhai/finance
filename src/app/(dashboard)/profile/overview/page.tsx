@@ -29,11 +29,13 @@ async function getOverviewData(userId: string) {
   const supabase = await createClient();
 
   // Get profile data
-  const { data: profile } = await supabase
+  const { data: profile } = (await supabase
     .from("profiles")
     .select("*")
     .eq("id", userId)
-    .single();
+    .single()) as {
+    data: { id: string; currency: string; created_at: string } | null;
+  };
 
   // Get counts
   const [
@@ -61,10 +63,12 @@ async function getOverviewData(userId: string) {
   ]);
 
   // Calculate total balance (sum of all transactions)
-  const { data: transactions } = await supabase
+  const { data: transactions } = (await supabase
     .from("transactions")
     .select("amount, type")
-    .eq("user_id", userId);
+    .eq("user_id", userId)) as {
+    data: Array<{ amount: number; type: string }> | null;
+  };
 
   const totalBalance =
     transactions?.reduce((sum, t) => {

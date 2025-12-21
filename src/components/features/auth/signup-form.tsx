@@ -38,9 +38,11 @@ import {
 } from "@/components/ui/select";
 
 // Signup form validation schema (extends server schema with confirmPassword)
+// Note: We explicitly override currency to be required (no default) for type safety
 const signupSchema = signUpSchema
   .extend({
     confirmPassword: z.string().min(1, "Please confirm your password"),
+    currency: z.string().min(1, "Currency is required"),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",

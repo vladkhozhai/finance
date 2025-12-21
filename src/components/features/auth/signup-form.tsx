@@ -17,6 +17,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import { signUp } from "@/app/actions/auth";
+import { signUpSchema } from "@/lib/validations/auth";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,18 +37,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-// Signup form validation schema
-const signupSchema = z
-  .object({
-    email: z.string().email("Invalid email address"),
-    password: z
-      .string()
-      .min(8, "Password must be at least 8 characters")
-      .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
-      .regex(/[a-z]/, "Password must contain at least one lowercase letter")
-      .regex(/[0-9]/, "Password must contain at least one number"),
+// Signup form validation schema (extends server schema with confirmPassword)
+const signupSchema = signUpSchema
+  .extend({
     confirmPassword: z.string().min(1, "Please confirm your password"),
-    currency: z.string().min(1, "Please select a currency"),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",

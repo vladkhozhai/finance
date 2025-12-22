@@ -50,15 +50,21 @@ export type TransactionWithRelations = Transaction & {
 /**
  * Creates a new transaction with optional tags and multi-currency support.
  *
- * Multi-currency transactions (paymentMethodId is REQUIRED):
+ * Multi-currency transactions:
  *   - amount is in payment method's currency (becomes native_amount)
  *   - backend fetches exchange rate and calculates base currency amount
  *   - stores: amount (base), native_amount, exchange_rate, base_currency
  *
- * Note: After migration 20251219000001, all transactions MUST have a payment method.
- * This prevents orphaned transactions and ensures proper currency context.
+ * Payment Method Resolution (Bug #36 fix):
+ *   - If paymentMethodId is provided: uses that payment method
+ *   - If not provided: uses user's default payment method
+ *   - If no default: uses first active payment method
+ *   - If no payment methods exist: auto-creates "Cash/Wallet" with user's base currency
  *
- * @param input - Transaction data to create (paymentMethodId is required)
+ * This ensures all transactions have a payment method (required by DB constraint)
+ * while maintaining backward compatibility and providing excellent UX.
+ *
+ * @param input - Transaction data to create (paymentMethodId is optional)
  * @returns ActionResult with created transaction ID
  */
 export async function createTransaction(
@@ -111,77 +117,135 @@ export async function createTransaction(
       }
     }
 
-    // 5. Handle multi-currency conversion (optional payment method)
-    let paymentMethod: { currency: string } | null = null;
-    let finalAmount = validated.data.amount;
-    let exchangeRate = 1;
-    let baseCurrency = "USD";
+    // 5. Fetch user's base currency from profile
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("currency")
+      .eq("id", user.id)
+      .single();
 
-    // If payment method is provided, handle currency conversion
-    if (validated.data.paymentMethodId) {
-      // 5a. Fetch payment method to get its currency
-      const { data: pm, error: pmError } = await supabase
+    if (profileError || !profile) {
+      return error("Failed to fetch user profile. Please try again.");
+    }
+
+    const baseCurrency = profile.currency;
+
+    // 6. Resolve payment method (auto-create default if missing)
+    let resolvedPaymentMethodId = validated.data.paymentMethodId;
+
+    if (!resolvedPaymentMethodId) {
+      // Check if user has a default payment method
+      const { data: defaultPM, error: defaultPMError } = await supabase
         .from("payment_methods")
-        .select("currency")
-        .eq("id", validated.data.paymentMethodId)
+        .select("id")
         .eq("user_id", user.id)
-        .single();
+        .eq("is_default", true)
+        .eq("is_active", true)
+        .maybeSingle();
 
-      if (pmError || !pm) {
-        return error(
-          "Invalid payment method. Please select a valid payment method.",
-        );
-      }
-      paymentMethod = pm;
-
-      // 5b. Fetch user's base currency from profile
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("currency")
-        .eq("id", user.id)
-        .single();
-
-      if (profileError || !profile) {
-        return error("Failed to fetch user profile. Please try again.");
+      if (defaultPMError) {
+        console.error("Error fetching default payment method:", defaultPMError);
+        return error("Failed to fetch payment methods. Please try again.");
       }
 
-      baseCurrency = profile.currency;
-      const nativeAmount = validated.data.amount; // User enters amount in payment method's currency
-
-      // 5c. Get exchange rate (use manual rate if provided, otherwise fetch)
-      if (validated.data.manualExchangeRate) {
-        exchangeRate = validated.data.manualExchangeRate;
+      if (defaultPM) {
+        // Use existing default payment method
+        resolvedPaymentMethodId = defaultPM.id;
       } else {
-        const fetchedRate = await getExchangeRate(
-          paymentMethod.currency,
-          baseCurrency,
-          validated.data.date,
-        );
+        // No default payment method - check if user has ANY active payment method
+        const { data: anyActivePM, error: anyPMError } = await supabase
+          .from("payment_methods")
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("is_active", true)
+          .limit(1)
+          .maybeSingle();
 
-        if (fetchedRate === null) {
-          return error(
-            `Exchange rate not available for ${paymentMethod.currency} to ${baseCurrency}. Please provide a manual rate.`,
-          );
+        if (anyPMError) {
+          console.error("Error fetching payment methods:", anyPMError);
+          return error("Failed to fetch payment methods. Please try again.");
         }
-        exchangeRate = fetchedRate;
-      }
 
-      // 5d. Calculate base currency amount
-      finalAmount = calculateBaseAmount(nativeAmount, exchangeRate);
-    } else {
-      // No payment method provided - use user's base currency
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("currency")
-        .eq("id", user.id)
-        .single();
+        if (anyActivePM) {
+          // Use first active payment method
+          resolvedPaymentMethodId = anyActivePM.id;
+        } else {
+          // No payment methods exist - auto-create default "Cash/Wallet" payment method
+          const { data: newPM, error: createPMError } = await supabase
+            .from("payment_methods")
+            .insert({
+              user_id: user.id,
+              name: "Cash/Wallet",
+              currency: baseCurrency,
+              is_default: true,
+              is_active: true,
+              color: "#10B981", // emerald-500
+            })
+            .select("id")
+            .single();
 
-      if (profile) {
-        baseCurrency = profile.currency;
+          if (createPMError || !newPM) {
+            console.error(
+              "Error creating default payment method:",
+              createPMError,
+            );
+            return error(
+              "You need to create a payment method before creating transactions. Please go to Settings to add a payment method.",
+            );
+          }
+
+          resolvedPaymentMethodId = newPM.id;
+        }
       }
     }
 
-    // 6. Insert transaction with multi-currency fields
+    // 7. Handle multi-currency conversion
+    let paymentMethod: { currency: string } | null = null;
+    let finalAmount = validated.data.amount;
+    let exchangeRate = 1;
+
+    // Fetch payment method to get its currency
+    const { data: pm, error: pmError } = await supabase
+      .from("payment_methods")
+      .select("currency")
+      .eq("id", resolvedPaymentMethodId)
+      .eq("user_id", user.id)
+      .single();
+
+    if (pmError || !pm) {
+      return error(
+        "Invalid payment method. Please select a valid payment method.",
+      );
+    }
+    paymentMethod = pm;
+
+    const nativeAmount = validated.data.amount; // User enters amount in payment method's currency
+
+    // Get exchange rate (use manual rate if provided, otherwise fetch)
+    if (validated.data.manualExchangeRate) {
+      exchangeRate = validated.data.manualExchangeRate;
+    } else if (paymentMethod.currency !== baseCurrency) {
+      // Only fetch rate if currencies differ
+      const fetchedRate = await getExchangeRate(
+        paymentMethod.currency,
+        baseCurrency,
+        validated.data.date,
+      );
+
+      if (fetchedRate === null) {
+        return error(
+          `Exchange rate not available for ${paymentMethod.currency} to ${baseCurrency}. Please provide a manual rate or try again later.`,
+        );
+      }
+      exchangeRate = fetchedRate;
+    }
+
+    // Calculate base currency amount
+    if (paymentMethod.currency !== baseCurrency) {
+      finalAmount = calculateBaseAmount(nativeAmount, exchangeRate);
+    }
+
+    // 8. Insert transaction with multi-currency fields
     const insertData = {
       user_id: user.id,
       amount: finalAmount,
@@ -189,8 +253,8 @@ export async function createTransaction(
       category_id: validated.data.categoryId,
       date: validated.data.date,
       description: validated.data.description || null,
-      payment_method_id: validated.data.paymentMethodId || null, // Optional
-      native_amount: validated.data.amount, // Original amount in payment method currency
+      payment_method_id: resolvedPaymentMethodId, // Always has a value
+      native_amount: nativeAmount, // Original amount in payment method currency
       exchange_rate: exchangeRate,
       base_currency: baseCurrency,
     };
@@ -206,7 +270,7 @@ export async function createTransaction(
       return error("Failed to create transaction. Please try again.");
     }
 
-    // 7. Handle tags if provided (atomic operation)
+    // 9. Handle tags if provided (atomic operation)
     if (validated.data.tagIds && validated.data.tagIds.length > 0) {
       const tagInserts = validated.data.tagIds.map((tagId) => ({
         transaction_id: transaction.id,
@@ -225,7 +289,7 @@ export async function createTransaction(
       }
     }
 
-    // 8. Revalidate affected paths
+    // 10. Revalidate affected paths
     revalidatePath("/dashboard");
     revalidatePath("/transactions");
     revalidatePath("/budgets");

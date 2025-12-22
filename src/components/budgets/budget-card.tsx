@@ -35,18 +35,12 @@ import { BudgetPaymentBreakdown } from "./budget-payment-breakdown";
 import { DeleteBudgetDialog } from "./delete-budget-dialog";
 import { EditBudgetDialog } from "./edit-budget-dialog";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils/currency";
 
 interface BudgetCardProps {
   budget: BudgetProgress;
-  currency?: string;
+  currency?: string; // ISO currency code (e.g., "USD", "EUR", "UAH")
   onUpdate?: () => void;
-}
-
-/**
- * Formats amount with currency symbol.
- */
-function formatCurrency(amount: number, currency: string = "$"): string {
-  return `${currency}${amount.toFixed(2)}`;
 }
 
 /**
@@ -62,7 +56,7 @@ function formatPeriod(period: string): string {
 
 export function BudgetCard({
   budget,
-  currency = "$",
+  currency = "USD",
   onUpdate,
 }: BudgetCardProps) {
   const [showEditDialog, setShowEditDialog] = useState(false);

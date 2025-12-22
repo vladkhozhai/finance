@@ -6,6 +6,200 @@ This file tracks all bugs found during E2E testing.
 
 ## 🔴 CRITICAL BUGS
 
+### BUG-013: BUG-006 Fix Not Deployed to Production - Vercel Deployment Failure
+**Status**: 🔴 OPEN - **BLOCKS PRODUCTION APPROVAL**
+**Priority**: P0 - CRITICAL
+**Severity**: DEPLOYMENT FAILURE - CODE FIX NOT REACHING PRODUCTION
+**Assigned To**: Backend Developer (03) + System Architect (02)
+**Found By**: QA Engineer (05)
+**Date Found**: 2025-12-21
+**Test Iteration**: Iteration 5
+**Production URL**: https://financeflow-brown.vercel.app/
+
+**Summary**:
+Commit `3284c80` ("fix: remove overly restrictive email validation (BUG-006)") has been pushed to `origin/main` but is NOT deployed to production. Vercel is serving outdated validation code that rejects valid `@example.com` emails, despite the fix being present in the repository.
+
+**Evidence**:
+
+Repository State (CORRECT):
+```bash
+$ git log --oneline -1
+3284c80 fix: remove overly restrictive email validation (BUG-006)
+
+# Code in repository:
+export const signUpSchema = z.object({
+  email: z.string().email("Invalid email address"), // Line 25 - Standard Zod validator
+  ...
+});
+```
+
+Production Behavior (INCORRECT):
+```bash
+POST https://financeflow-brown.vercel.app/signup
+Request: {"email":"qa-iteration5@example.com","password":"TestPassword123!","currency":"USD"}
+Response: {"success":false,"error":"Email address \"qa-iteration5@example.com\" is invalid"}
+```
+
+Production REJECTS `@example.com` emails using OLD regex validation.
+
+Verification Test:
+- Tested with `qa-iteration5@financeflow.com` → ✅ SUCCEEDED
+- Proves server actions work correctly, but validation code is outdated
+
+**Root Cause**:
+Vercel deployment pipeline failed or didn't trigger for commit `3284c80`. Possible causes:
+1. Auto-deploy didn't trigger after git push
+2. Build failed silently
+3. Deployment is stuck/pending
+4. Vercel cache not invalidated properly
+
+**Impact**:
+- ❌ BUG-006 remains unfixed in production despite code fix
+- ❌ Cannot use RFC 2606 reserved test domains (@example.com)
+- ❌ BLOCKS production approval for Iteration 5
+- ❌ All QA smoke testing blocked until deployment succeeds
+- ⚠️ Code repository and production environment out of sync
+
+**Action Required (Backend Developer)**:
+1. **URGENT**: Login to Vercel dashboard
+2. Check deployment status for commit `3284c80`
+3. Review build logs if deployment failed
+4. Trigger manual deployment if auto-deploy didn't work
+5. Verify production serves correct code:
+   ```bash
+   curl -X POST https://financeflow-brown.vercel.app/signup \
+     -H "Content-Type: application/json" \
+     -d '{"email":"test@example.com","password":"Test123!"}'
+   # Should NOT return validation error
+   ```
+6. Report deployment status in BUG-013 ticket
+
+**Regression Status**:
+All previously fixed bugs remain stable:
+- ✅ BUG-001: Signup link navigation - STABLE
+- ✅ BUG-003: Server error display - STABLE
+- ✅ BUG-004: Confirmation banner - STABLE
+- ✅ BUG-005: Dashboard accessibility - STABLE
+
+**Documentation**:
+- `/QA_ITERATION_5_FINAL_REPORT.md` - Full test report
+- `/BUG_013_DEPLOYMENT_FAILURE.md` - Detailed bug ticket
+- `/ITERATION_5_SUMMARY.md` - Quick summary
+
+**Related Issues**:
+- BUG-006: Original email validation issue (fixed in code, not deployed)
+
+**Estimated Resolution Time**: 30 minutes (investigation + manual deployment)
+
+**Next Steps**:
+1. Backend Developer investigates Vercel deployment
+2. Trigger deployment if needed
+3. QA performs Iteration 6 verification
+4. Approve production if Iteration 6 passes
+
+---
+
+### BUG-012: Production 500 Error - All Pages Returning 500 ❌🚨
+**Status**: 🚨 **BLOCKING PRODUCTION** - Application Down
+**Priority**: P0 - CRITICAL
+**Severity**: 100% PRODUCTION DOWNTIME - ALL PAGES RETURN 500
+**Assigned To**: System Architect (02) / DevOps
+**Found By**: QA Engineer (05)
+**Date Found**: 2025-12-20
+**Deployment**: commit `abf68d8` (https://financeflow-brown.vercel.app)
+**Deployment ID**: dpl_GwKceoLjGgcL4aQzfE6tSGq4uVd1
+
+**Summary**:
+Production deployment at https://financeflow-brown.vercel.app is **completely down**. Every single page returns HTTP 500 Internal Server Error. This is a complete production outage affecting 100% of users.
+
+**Verified Failing Pages**:
+- ❌ `/` (homepage) - HTTP 500
+- ❌ `/login` - HTTP 500
+- ❌ `/signup` - HTTP 500
+- ❌ All other routes (assumed broken)
+
+**Root Cause**:
+Unknown - requires investigation. Suspected causes:
+1. Missing environment variables (most likely)
+2. Runtime error in middleware or root layout
+3. Supabase client initialization failure
+4. Database connection issue
+5. Server-side rendering error in pages using cookies()
+
+**Build Status**:
+- ✅ Build completed successfully (no TypeScript/lint errors)
+- ✅ All 20 routes compiled successfully
+- ✅ Deployment state: READY
+- ❌ Runtime crashes on every page load
+
+**Console Errors**:
+```
+[ERROR] Failed to load resource: the server responded with a status of 500 ()
+```
+
+**Network Logs**:
+```
+[GET] https://financeflow-brown.vercel.app/ => [500]
+[GET] https://financeflow-brown.vercel.app/login => [500]
+[GET] https://financeflow-brown.vercel.app/signup => [500]
+```
+
+**Impact**:
+- ⛔ 100% production downtime - No pages accessible
+- 🚫 All users blocked from accessing the application
+- 🔴 Every request returns 500 error
+- ❌ Production launch completely blocked
+- ❌ Cannot test any features
+- ❌ Cannot reproduce bugs in production
+- ❌ Zero application availability
+
+**Suspected Environment Variables (Not Verified)**:
+```bash
+# Required Supabase credentials
+NEXT_PUBLIC_SUPABASE_URL=https://xxxxxxxxxxxxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+# Optional but recommended
+EXCHANGERATE_API_KEY=your-api-key-here
+NEXT_PUBLIC_APP_URL=https://financeflow-brown.vercel.app
+```
+
+**Evidence**:
+- Screenshot: `/Users/vladislav.khozhai/WebstormProjects/finance/.playwright-mcp/test-results/production-homepage-500-error.png`
+- Screenshot: `/Users/vladislav.khozhai/WebstormProjects/finance/.playwright-mcp/test-results/production-signup-500-error.png`
+- Test Report: `/Users/vladislav.khozhai/WebstormProjects/finance/QA_PRODUCTION_SMOKE_TEST_CRITICAL_FAILURE.md`
+
+**Deployment History**:
+1. **dpl_GwKceoLjGgcL4aQzfE6tSGq4uVd1** (abf68d8) - Current - ❌ BROKEN
+   - "Fix Server Actions 405 error on auth pages"
+   - Added `dynamic = "force-dynamic"` to login/signup pages
+2. **dpl_DdzVWG5S1V5HveTZVekZJAS8THfs** (544d9fd) - Previous
+   - "Fix P0 Bugs #010 & #011"
+   - Added dynamic rendering to dashboard
+3. **dpl_sY4XjXXQuPkPktV8mVQoixnzixxy** (a3a1ed2) - Earlier
+   - "Downgrade to Next.js 15.5.9"
+
+**Immediate Actions Required**:
+1. **URGENT**: Check Vercel function logs for actual error stack trace
+   - Go to: https://vercel.com/vlads-projects-6a163549/financeflow/GwKceoLjGgcL4aQzfE6tSGq4uVd1
+   - Click "Functions" tab
+   - Look for runtime errors
+2. **URGENT**: Verify environment variables in Vercel dashboard
+   - Go to: Vercel Project Settings → Environment Variables
+   - Check if all required variables are present
+3. **HIGH**: Consider rollback to previous working deployment
+4. **HIGH**: Test local production build to see if issue reproduces locally
+
+**Next Steps**:
+1. System Architect: Investigate Vercel function logs immediately
+2. System Architect: Check and configure missing environment variables
+3. Backend Developer: Review recent code changes (commits abf68d8, 544d9fd)
+4. DevOps: Consider temporary rollback while investigating
+5. QA: Retest once fix is deployed
+
+---
+
 ### BUG-010: Production Signup Returns HTTP 405
 **Status**: 🔴 OPEN
 **Priority**: P0 - CRITICAL
@@ -613,8 +807,8 @@ Page title rendered as `<h2>` inside `<CardTitle>` component.
 
 ## 📊 Bug Statistics
 
-**Total Bugs**: 8
-**Critical**: 6 (2 resolved, 4 open)
+**Total Bugs**: 9
+**Critical**: 7 (2 resolved, 5 open)
 **Medium**: 2 (0 resolved, 2 open)
 **Low**: 0
 
@@ -622,15 +816,16 @@ Page title rendered as `<h2>` inside `<CardTitle>` component.
 - Authentication: 4 (2 resolved, 2 open - BUG-009, BUG_P0_PRODUCTION_001 resolved; BUG-001, BUG-010 open)
 - Routing: 2 (0 resolved, 2 open - BUG-002, BUG-011)
 - Accessibility: 2 (0 resolved, 2 open - BUG-003, BUG-004)
+- Deployment: 1 (0 resolved, 1 open - BUG-013)
 
 **By Status**:
-- Open: 6
+- Open: 7
 - In Progress: 0
 - Resolved: 2
 - Verified: 0 (pending QA)
 
 **By Environment**:
-- Production Only: 2 (BUG-010, BUG-011)
+- Production Only: 3 (BUG-010, BUG-011, BUG-013)
 - Local Development: 4 (BUG-001, BUG-002, BUG-003, BUG-004)
 - All Environments: 2 (BUG-009 resolved, BUG_P0_PRODUCTION_001 resolved)
 
@@ -661,7 +856,7 @@ Page title rendered as `<h2>` inside `<CardTitle>` component.
 
 ---
 
-**Last Updated**: 2025-12-20
+**Last Updated**: 2025-12-21
 **Tracked By**: QA Engineer (05)
 
 ---

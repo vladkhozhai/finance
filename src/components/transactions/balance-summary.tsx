@@ -10,12 +10,13 @@
 import { TrendingDown, TrendingUp, Wallet } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils/currency";
 
 interface BalanceSummaryProps {
   balance: number;
   income: number;
   expense: number;
-  currency?: string;
+  currency?: string; // ISO currency code (e.g., "USD", "EUR", "UAH")
   isLoading?: boolean;
 }
 
@@ -23,17 +24,9 @@ export function BalanceSummary({
   balance,
   income,
   expense,
-  currency = "$",
+  currency = "USD",
   isLoading = false,
 }: BalanceSummaryProps) {
-  const formatAmount = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "decimal",
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(amount);
-  };
-
   const isNegativeBalance = balance < 0;
 
   if (isLoading) {
@@ -66,8 +59,7 @@ export function BalanceSummary({
               isNegativeBalance ? "text-destructive" : "text-foreground",
             )}
           >
-            {currency}
-            {formatAmount(Math.abs(balance))}
+            {formatCurrency(Math.abs(balance), currency)}
             {isNegativeBalance && (
               <span className="ml-1 text-lg font-normal text-destructive">
                 (deficit)
@@ -85,8 +77,7 @@ export function BalanceSummary({
             <span>Total Income</span>
           </div>
           <div className="text-3xl font-bold text-green-600">
-            {currency}
-            {formatAmount(income)}
+            {formatCurrency(income, currency)}
           </div>
         </CardContent>
       </Card>
@@ -99,8 +90,7 @@ export function BalanceSummary({
             <span>Total Expense</span>
           </div>
           <div className="text-3xl font-bold text-red-600">
-            {currency}
-            {formatAmount(expense)}
+            {formatCurrency(expense, currency)}
           </div>
         </CardContent>
       </Card>

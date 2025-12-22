@@ -16,10 +16,13 @@ export type TransactionType = z.infer<typeof transactionTypeSchema>;
 
 /**
  * Schema for creating a new transaction.
- * Multi-currency support with required payment method (enforced by DB NOT NULL constraint).
+ * Multi-currency support with automatic payment method resolution.
  *
- * Note: paymentMethodId is REQUIRED after migration 20251219000001_migrate_orphaned_transactions.sql
- * This prevents orphaned transactions and ensures all transactions have proper currency context.
+ * Note: paymentMethodId is optional in the API but transactions always get assigned
+ * a payment method. If not provided, the server action will auto-select or auto-create
+ * a default payment method. This provides better UX while maintaining data integrity.
+ *
+ * See: createTransaction() in transactions.ts for payment method resolution logic.
  */
 export const createTransactionSchema = z
   .object({

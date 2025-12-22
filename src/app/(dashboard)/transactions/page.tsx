@@ -13,6 +13,7 @@ import {
   getTransactions,
   type TransactionWithRelations,
 } from "@/app/actions/transactions";
+import { getUserProfile } from "@/app/actions/profile";
 import {
   BalanceSummary,
   CreateTransactionDialog,
@@ -41,6 +42,7 @@ export default function TransactionsPage() {
     income: 0,
     expense: 0,
   });
+  const [currency, setCurrency] = useState<string>("USD");
 
   // UI state
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(true);
@@ -89,8 +91,17 @@ export default function TransactionsPage() {
     setIsLoadingTransactions(false);
   };
 
+  // Fetch user profile for currency
+  const fetchCurrency = async () => {
+    const result = await getUserProfile();
+    if (result.success) {
+      setCurrency(result.data.currency || "USD");
+    }
+  };
+
   // Initial data load
   useEffect(() => {
+    fetchCurrency();
     fetchBalance();
     fetchTransactions();
   }, []);
@@ -142,6 +153,7 @@ export default function TransactionsPage() {
         balance={balance.balance}
         income={balance.income}
         expense={balance.expense}
+        currency={currency}
         isLoading={isLoadingBalance}
       />
 
@@ -162,6 +174,7 @@ export default function TransactionsPage() {
 
           <TransactionList
             transactions={transactions}
+            currency={currency}
             isLoading={isLoadingTransactions}
             onEdit={handleEdit}
             onDelete={handleDelete}

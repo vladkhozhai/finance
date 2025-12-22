@@ -38,11 +38,11 @@ export default async function DashboardPage() {
   }
 
   // Fetch user's profile for currency
-  const { data: profile } = await supabase
+  const { data: profile } = (await supabase
     .from("profiles")
     .select("currency")
     .eq("id", user.id)
-    .maybeSingle() as { data: { currency: string } | null };
+    .maybeSingle()) as { data: { currency: string } | null };
 
   const currency = profile?.currency || "USD";
 

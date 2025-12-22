@@ -10,6 +10,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { BudgetProgress } from "@/app/actions/budgets";
 import { getBudgetProgress } from "@/app/actions/budgets";
+import { getUserProfile } from "@/app/actions/profile";
 import {
   BudgetFilters,
   type BudgetFilterValues,
@@ -77,6 +78,7 @@ export default function BudgetsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [filters, setFilters] = useState<BudgetFilterValues>({});
   const [sortBy, setSortBy] = useState<SortOption>("default");
+  const [currency, setCurrency] = useState<string>("USD");
 
   const { error: showError } = useToast();
 
@@ -106,10 +108,19 @@ export default function BudgetsPage() {
     setIsLoading(false);
   }, [filters, showError]);
 
+  // Fetch user profile for currency
+  const fetchCurrency = useCallback(async () => {
+    const result = await getUserProfile();
+    if (result.success) {
+      setCurrency(result.data.currency || "USD");
+    }
+  }, []);
+
   // Fetch budgets on mount and when filters change
   useEffect(() => {
+    fetchCurrency();
     fetchBudgets();
-  }, [fetchBudgets]);
+  }, [fetchBudgets, fetchCurrency]);
 
   // Handle filter changes
   const handleFiltersChange = (newFilters: BudgetFilterValues) => {
@@ -179,7 +190,7 @@ export default function BudgetsPage() {
       {/* Budget List */}
       <BudgetList
         budgets={sortedBudgets}
-        currency="$"
+        currency={currency}
         isLoading={isLoading}
         onUpdate={handleBudgetUpdate}
       />

@@ -17,14 +17,14 @@ import { TypeBadge } from "./type-badge";
 
 interface TransactionCardProps {
   transaction: TransactionWithRelations;
-  currency?: string;
+  currency?: string; // ISO currency code (e.g., "USD", "EUR", "UAH")
   onEdit: (transaction: TransactionWithRelations) => void;
   onDelete: (transaction: TransactionWithRelations) => void;
 }
 
 export function TransactionCard({
   transaction,
-  currency = "$",
+  currency = "USD",
   onEdit,
   onDelete,
 }: TransactionCardProps) {
@@ -33,14 +33,6 @@ export function TransactionCard({
     !!transaction.payment_method_id && !!transaction.payment_method;
   const isMultiCurrency =
     hasPaymentMethod && transaction.native_amount !== null;
-
-  const formatAmount = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "decimal",
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(amount);
-  };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -98,8 +90,7 @@ export function TransactionCard({
                 {/* Converted amount in base currency */}
                 <div className="text-xs text-muted-foreground">
                   ≈ {isIncome ? "+" : "-"}
-                  {currency}
-                  {formatAmount(transaction.amount)}
+                  {formatCurrency(transaction.amount, currency)}
                 </div>
               </div>
             ) : (
@@ -110,8 +101,7 @@ export function TransactionCard({
                 )}
               >
                 {isIncome ? "+" : "-"}
-                {currency}
-                {formatAmount(transaction.amount)}
+                {formatCurrency(transaction.amount, currency)}
               </div>
             )}
           </div>

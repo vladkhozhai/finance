@@ -12,7 +12,7 @@ import { TransactionCard } from "./transaction-card";
 
 interface TransactionListProps {
   transactions: TransactionWithRelations[];
-  currency?: string;
+  currency?: string; // ISO currency code (e.g., "USD", "EUR", "UAH")
   isLoading?: boolean;
   onEdit: (transaction: TransactionWithRelations) => void;
   onDelete: (transaction: TransactionWithRelations) => void;
@@ -20,7 +20,7 @@ interface TransactionListProps {
 
 export function TransactionList({
   transactions,
-  currency = "$",
+  currency = "USD",
   isLoading = false,
   onEdit,
   onDelete,

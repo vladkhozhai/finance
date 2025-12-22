@@ -31,7 +31,7 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background max-w-full overflow-x-hidden">
       {/* Desktop Header - Hidden on mobile, shown on md+ */}
       <div className="hidden md:block">
         <AppHeader
@@ -41,7 +41,7 @@ export default async function DashboardLayout({
       </div>
 
       {/* Main Content - Extra padding on mobile for bottom nav */}
-      <main className="pb-20 md:pb-0">{children}</main>
+      <main className="pb-20 md:pb-0 max-w-full">{children}</main>
 
       {/* Mobile Bottom Navigation - Only the mobile nav variant */}
       <MainNav />

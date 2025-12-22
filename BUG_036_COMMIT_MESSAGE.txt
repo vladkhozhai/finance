@@ -1,0 +1,47 @@
+fix: Add automatic payment method resolution to prevent transaction creation failures (Bug #36)
+
+PROBLEM:
+Users were unable to create transactions in production. The database requires
+a payment_method_id (NOT NULL constraint from migration 20251219000001), but
+the backend was allowing NULL values when users didn't select a payment method,
+causing INSERT operations to fail with unclear error messages.
+
+ROOT CAUSE:
+- Database: payment_method_id has NOT NULL constraint
+- Backend: Treated payment_method_id as optional, sending NULL
+- Frontend: Allowed users to skip payment method selection
+- Result: PostgreSQL rejected INSERT with constraint violation
+
+SOLUTION:
+Implemented automatic payment method resolution in createTransaction():
+
+1. If user provides paymentMethodId → use it
+2. If not provided → check for default payment method
+3. If no default → use first active payment method
+4. If none exist → auto-create "Cash/Wallet" with user's base currency
+
+This ensures:
+✅ All transactions have valid payment methods (satisfies DB constraint)
+✅ Backward compatibility with existing frontend code
+✅ Excellent UX for new users (no manual setup required)
+✅ Clear error messages if payment method creation fails
+✅ Multi-currency support maintained
+
+CHANGES:
+- src/app/actions/transactions.ts: Added payment method resolution logic
+- src/lib/validations/transaction.ts: Updated documentation
+
+TESTING:
+✅ Build passes (npm run build)
+✅ No TypeScript errors
+✅ No linting errors
+✅ Backward compatible with existing transactions
+✅ Auto-creates payment method for new users
+
+DEPLOYMENT:
+- No database migration required
+- No breaking changes
+- Ready for production deployment
+
+Fixes: Trello Card #36
+Related: Migration 20251219000001_migrate_orphaned_transactions.sql

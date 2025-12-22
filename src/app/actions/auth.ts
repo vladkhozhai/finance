@@ -53,6 +53,23 @@ export async function signIn(data: SignInInput) {
 }
 
 /**
+ * Get the site URL for redirects
+ * Handles both production and development environments
+ */
+function getSiteUrl(): string {
+  // Production URL from environment
+  if (process.env.NEXT_PUBLIC_SITE_URL) {
+    return process.env.NEXT_PUBLIC_SITE_URL;
+  }
+  // Vercel deployment URL
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+  // Default to localhost for development
+  return "http://localhost:3000";
+}
+
+/**
  * Sign up with email and password
  */
 export async function signUp(data: SignUpInput) {
@@ -66,8 +83,9 @@ export async function signUp(data: SignUpInput) {
   }
 
   const supabase = await createClient();
+  const siteUrl = getSiteUrl();
 
-  // Create user account
+  // Create user account with proper email redirect
   const { data: authData, error: signUpError } = await supabase.auth.signUp({
     email: validated.data.email,
     password: validated.data.password,
@@ -75,6 +93,7 @@ export async function signUp(data: SignUpInput) {
       data: {
         currency: validated.data.currency,
       },
+      emailRedirectTo: `${siteUrl}/auth/callback`,
     },
   });
 
@@ -137,4 +156,57 @@ export async function getCurrentUser() {
   }
 
   return user;
+}
+
+/**
+ * Resend confirmation email to user
+ * Used when the original confirmation link has expired
+ */
+export async function resendConfirmationEmail(email: string) {
+  if (!email || !email.includes("@")) {
+    return {
+      success: false as const,
+      error: "Please provide a valid email address",
+    };
+  }
+
+  const supabase = await createClient();
+  const siteUrl = getSiteUrl();
+
+  const { error } = await supabase.auth.resend({
+    type: "signup",
+    email: email,
+    options: {
+      emailRedirectTo: `${siteUrl}/auth/callback`,
+    },
+  });
+
+  if (error) {
+    // Map common errors to user-friendly messages
+    if (error.message.includes("rate limit")) {
+      return {
+        success: false as const,
+        error:
+          "Too many requests. Please wait a few minutes before trying again.",
+      };
+    }
+    if (
+      error.message.includes("not found") ||
+      error.message.includes("not exist")
+    ) {
+      return {
+        success: false as const,
+        error:
+          "No account found with this email. Please check the email address or sign up.",
+      };
+    }
+    return {
+      success: false as const,
+      error: error.message,
+    };
+  }
+
+  return {
+    success: true as const,
+  };
 }

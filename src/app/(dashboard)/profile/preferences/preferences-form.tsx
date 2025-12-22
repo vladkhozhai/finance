@@ -30,6 +30,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/lib/hooks/use-toast";
+import { getAllCurrencies } from "@/lib/utils/currency";
 
 const preferencesSchema = z.object({
   currency: z.string().min(3).max(3),
@@ -41,19 +42,9 @@ interface PreferencesFormProps {
   currentCurrency: string;
 }
 
-const SUPPORTED_CURRENCIES = [
-  { code: "USD", name: "US Dollar" },
-  { code: "EUR", name: "Euro" },
-  { code: "GBP", name: "British Pound" },
-  { code: "JPY", name: "Japanese Yen" },
-  { code: "CAD", name: "Canadian Dollar" },
-  { code: "AUD", name: "Australian Dollar" },
-  { code: "CHF", name: "Swiss Franc" },
-  { code: "CNY", name: "Chinese Yuan" },
-  { code: "INR", name: "Indian Rupee" },
-];
-
 export function PreferencesForm({ currentCurrency }: PreferencesFormProps) {
+  // Get all supported currencies from centralized utility (40+ currencies including UAH)
+  const supportedCurrencies = getAllCurrencies();
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
   const router = useRouter();
@@ -112,7 +103,7 @@ export function PreferencesForm({ currentCurrency }: PreferencesFormProps) {
                 <SelectValue placeholder="Select currency" />
               </SelectTrigger>
               <SelectContent>
-                {SUPPORTED_CURRENCIES.map((currency) => (
+                {supportedCurrencies.map((currency) => (
                   <SelectItem key={currency.code} value={currency.code}>
                     {currency.code} - {currency.name}
                   </SelectItem>

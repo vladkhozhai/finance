@@ -36,6 +36,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { getAllCurrencies } from "@/lib/utils/currency";
 
 // Signup form validation schema (extends server schema with confirmPassword)
 // Note: We explicitly override currency to be required (no default) for type safety
@@ -51,18 +52,9 @@ const signupSchema = signUpSchema
 
 type SignupFormData = z.infer<typeof signupSchema>;
 
-// Common currencies
-const currencies = [
-  { value: "USD", label: "USD - US Dollar" },
-  { value: "EUR", label: "EUR - Euro" },
-  { value: "GBP", label: "GBP - British Pound" },
-  { value: "JPY", label: "JPY - Japanese Yen" },
-  { value: "CAD", label: "CAD - Canadian Dollar" },
-  { value: "AUD", label: "AUD - Australian Dollar" },
-  { value: "UAH", label: "UAH - Ukrainian Hryvnia" },
-];
-
 export function SignupForm() {
+  // Get all supported currencies from centralized utility (40+ currencies including UAH)
+  const supportedCurrencies = getAllCurrencies();
   const [isPending, startTransition] = useTransition();
   const [serverError, setServerError] = useState<string | null>(null);
 
@@ -194,9 +186,9 @@ export function SignupForm() {
                 <SelectValue placeholder="Select currency" />
               </SelectTrigger>
               <SelectContent>
-                {currencies.map((currency) => (
-                  <SelectItem key={currency.value} value={currency.value}>
-                    {currency.label}
+                {supportedCurrencies.map((currency) => (
+                  <SelectItem key={currency.code} value={currency.code}>
+                    {currency.code} - {currency.name}
                   </SelectItem>
                 ))}
               </SelectContent>

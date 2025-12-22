@@ -111,7 +111,7 @@ export function TagCombobox({
     startTransition(async () => {
       const result = await createTag({ name: tagName });
 
-      if (result.success && result.data) {
+      if (result.success) {
         // Add new tag to local list (optimistic update)
         const newTag: Tag = {
           id: result.data.id,
@@ -132,7 +132,7 @@ export function TagCombobox({
 
         toast.success(`Tag "${result.data.name}" created`);
       } else {
-        toast.error(result.error || "Failed to create tag");
+        toast.error(result.error);
       }
     });
   };

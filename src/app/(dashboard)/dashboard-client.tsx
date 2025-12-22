@@ -12,18 +12,32 @@
 "use client";
 
 import { useState } from "react";
+import type { PaymentMethodWithDetails } from "@/app/actions/dashboard";
 import { PaymentMethodBalanceCard } from "@/components/dashboard/payment-method-balance-card";
 import { TransactionListFiltered } from "@/components/dashboard/transaction-list-filtered";
-import type { PaymentMethodWithDetails } from "@/app/actions/dashboard";
+import {
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogDescription,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+} from "@/components/ui/responsive-dialog";
+import { useIsDesktop } from "@/lib/hooks/use-media-query";
 
 interface DashboardClientProps {
   paymentMethods: PaymentMethodWithDetails[];
 }
 
 export function DashboardClient({ paymentMethods }: DashboardClientProps) {
+  const isDesktop = useIsDesktop();
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<
     string | null
   >(null);
+
+  // Get the selected payment method details for mobile bottomsheet title
+  const selectedPM = paymentMethods.find(
+    (pm) => pm.id === selectedPaymentMethod,
+  );
 
   if (paymentMethods.length === 0) {
     return (
@@ -88,8 +102,8 @@ export function DashboardClient({ paymentMethods }: DashboardClientProps) {
         </div>
       </div>
 
-      {/* Filtered Transactions */}
-      {selectedPaymentMethod && (
+      {/* Filtered Transactions (desktop only - inline) */}
+      {isDesktop && selectedPaymentMethod && (
         <div className="animate-in slide-in-from-top-4 duration-300">
           <TransactionListFiltered
             paymentMethodId={selectedPaymentMethod}
@@ -97,6 +111,29 @@ export function DashboardClient({ paymentMethods }: DashboardClientProps) {
           />
         </div>
       )}
+
+      {/* Filtered Transactions (mobile - bottomsheet) */}
+      <ResponsiveDialog
+        open={!isDesktop && !!selectedPaymentMethod}
+        onOpenChange={(open) => !open && setSelectedPaymentMethod(null)}
+      >
+        <ResponsiveDialogContent scrollable>
+          <ResponsiveDialogHeader>
+            <ResponsiveDialogTitle>
+              {selectedPM?.name || "Transactions"}
+            </ResponsiveDialogTitle>
+            <ResponsiveDialogDescription>
+              Transactions for this payment method
+            </ResponsiveDialogDescription>
+          </ResponsiveDialogHeader>
+          {selectedPaymentMethod && (
+            <TransactionListFiltered
+              paymentMethodId={selectedPaymentMethod}
+              onClose={() => setSelectedPaymentMethod(null)}
+            />
+          )}
+        </ResponsiveDialogContent>
+      </ResponsiveDialog>
     </div>
   );
 }

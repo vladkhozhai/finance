@@ -13,10 +13,18 @@ import {
   Loader2,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { getExchangeRate } from "@/app/actions/exchange-rates";
 import { getPaymentMethods } from "@/app/actions/payment-methods";
 import { createTransfer } from "@/app/actions/transfers";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   ResponsiveDialog,
   ResponsiveDialogContent,
@@ -26,13 +34,6 @@ import {
   ResponsiveDialogTitle,
   ResponsiveDialogTrigger,
 } from "@/components/ui/responsive-dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -44,7 +45,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/lib/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { formatCurrency, getCurrencySymbol } from "@/lib/utils/currency";
-import { getExchangeRate } from "@/app/actions/exchange-rates";
 import type { Tables } from "@/types/database.types";
 
 type PaymentMethod = Tables<"payment_methods">;
@@ -284,7 +284,10 @@ export function CreateTransferDialog({
           </Button>
         )}
       </ResponsiveDialogTrigger>
-      <ResponsiveDialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+      <ResponsiveDialogContent
+        className="max-w-lg max-h-[90vh] overflow-y-auto"
+        scrollable
+      >
         <ResponsiveDialogHeader>
           <ResponsiveDialogTitle>Create Transfer</ResponsiveDialogTitle>
           <ResponsiveDialogDescription>

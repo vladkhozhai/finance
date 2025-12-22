@@ -8,22 +8,15 @@
 
 import { Calendar as CalendarIcon, CreditCard, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import {
-  updateTransaction,
-  type TransactionWithRelations,
-} from "@/app/actions/transactions";
 import { getCategories } from "@/app/actions/categories";
 import { getPaymentMethods } from "@/app/actions/payment-methods";
+import {
+  type TransactionWithRelations,
+  updateTransaction,
+} from "@/app/actions/transactions";
+import { TagSelector } from "@/components/tags";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import {
-  ResponsiveDialog,
-  ResponsiveDialogContent,
-  ResponsiveDialogDescription,
-  ResponsiveDialogFooter,
-  ResponsiveDialogHeader,
-  ResponsiveDialogTitle,
-} from "@/components/ui/responsive-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -33,6 +26,14 @@ import {
 } from "@/components/ui/popover";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogDescription,
+  ResponsiveDialogFooter,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+} from "@/components/ui/responsive-dialog";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -40,7 +41,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { TagSelector } from "@/components/tags";
 import { useToast } from "@/lib/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { getCurrencySymbol } from "@/lib/utils/currency";
@@ -235,7 +235,10 @@ export function EditTransactionDialog({
 
   return (
     <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
-      <ResponsiveDialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+      <ResponsiveDialogContent
+        className="max-w-lg max-h-[90vh] overflow-y-auto"
+        scrollable
+      >
         <ResponsiveDialogHeader>
           <ResponsiveDialogTitle>Edit Transaction</ResponsiveDialogTitle>
           <ResponsiveDialogDescription>

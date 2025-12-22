@@ -60,7 +60,11 @@ function ResponsiveDialogTrigger({
 
   if (isDesktop) {
     return (
-      <DialogPrimitive.Trigger asChild={asChild} className={className} {...props}>
+      <DialogPrimitive.Trigger
+        asChild={asChild}
+        className={className}
+        {...props}
+      >
         {children}
       </DialogPrimitive.Trigger>
     );
@@ -106,9 +110,11 @@ function ResponsiveDialogContent({
   className,
   children,
   showCloseButton = true,
+  scrollable = false,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean;
+  scrollable?: boolean;
 }) {
   const isDesktop = useIsDesktop();
 
@@ -145,14 +151,16 @@ function ResponsiveDialogContent({
       <DrawerPrimitive.Overlay className="fixed inset-0 z-50 bg-black/50" />
       <DrawerPrimitive.Content
         className={cn(
-          "bg-background fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto max-h-[96vh] flex-col rounded-t-xl border-t",
+          "bg-background fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto max-h-[96vh] flex-col rounded-t-xl border-t overflow-hidden",
           className,
         )}
         {...props}
       >
         {/* Drawer handle for swipe gesture */}
         <div className="mx-auto mt-4 h-1.5 w-12 shrink-0 rounded-full bg-muted" />
-        <div className="flex-1 overflow-y-auto p-6">{children}</div>
+        <div className={cn("p-6 pb-8", scrollable && "flex-1 overflow-y-auto")}>
+          {children}
+        </div>
       </DrawerPrimitive.Content>
     </DrawerPrimitive.Portal>
   );

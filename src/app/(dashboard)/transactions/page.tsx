@@ -25,6 +25,14 @@ import {
 } from "@/components/transactions";
 import { CreateTransferDialog } from "@/components/transfers";
 import { Button } from "@/components/ui/button";
+import {
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogDescription,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+} from "@/components/ui/responsive-dialog";
+import { useIsDesktop } from "@/lib/hooks/use-media-query";
 import { cn } from "@/lib/utils";
 
 type Transaction = TransactionWithRelations;
@@ -36,6 +44,8 @@ interface BalanceData {
 }
 
 export default function TransactionsPage() {
+  const isDesktop = useIsDesktop();
+
   // Data state
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [balance, setBalance] = useState<BalanceData>({
@@ -49,6 +59,7 @@ export default function TransactionsPage() {
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(true);
   const [isLoadingBalance, setIsLoadingBalance] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   // Filter state
   const [filters, setFilters] = useState<TransactionFiltersState>({});
@@ -139,8 +150,14 @@ export default function TransactionsPage() {
           <Button
             variant="outline"
             size="lg"
-            onClick={() => setShowFilters(!showFilters)}
-            className={cn(showFilters && "bg-accent")}
+            onClick={() => {
+              if (isDesktop) {
+                setShowFilters(!showFilters);
+              } else {
+                setMobileFiltersOpen(true);
+              }
+            }}
+            className={cn((showFilters || mobileFiltersOpen) && "bg-accent")}
           >
             <Filter className="h-5 w-5 mr-2" />
             Filters
@@ -160,7 +177,12 @@ export default function TransactionsPage() {
       />
 
       {/* Main Content */}
-      <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
+      <div
+        className={cn(
+          "grid gap-6",
+          isDesktop && showFilters && "lg:grid-cols-[1fr_300px]",
+        )}
+      >
         {/* Transactions List */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
@@ -183,19 +205,35 @@ export default function TransactionsPage() {
           />
         </div>
 
-        {/* Filters Sidebar (desktop) or expanded (mobile) */}
-        <div
-          className={cn(
-            "lg:block",
-            !showFilters && "hidden",
-            showFilters && "block",
-          )}
-        >
+        {/* Filters Sidebar (desktop only) */}
+        {isDesktop && showFilters && (
           <div className="lg:sticky lg:top-6">
             <TransactionFilters filters={filters} onChange={setFilters} />
           </div>
-        </div>
+        )}
       </div>
+
+      {/* Mobile Filters Bottomsheet */}
+      <ResponsiveDialog
+        open={mobileFiltersOpen}
+        onOpenChange={setMobileFiltersOpen}
+      >
+        <ResponsiveDialogContent scrollable>
+          <ResponsiveDialogHeader>
+            <ResponsiveDialogTitle>Filters</ResponsiveDialogTitle>
+            <ResponsiveDialogDescription>
+              Filter your transactions by type, category, tags, or date range
+            </ResponsiveDialogDescription>
+          </ResponsiveDialogHeader>
+          <div className="py-4">
+            <TransactionFilters
+              filters={filters}
+              onChange={setFilters}
+              onApply={() => setMobileFiltersOpen(false)}
+            />
+          </div>
+        </ResponsiveDialogContent>
+      </ResponsiveDialog>
 
       {/* Edit Dialog */}
       <EditTransactionDialog

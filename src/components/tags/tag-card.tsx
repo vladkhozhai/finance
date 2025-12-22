@@ -55,8 +55,8 @@ export function TagCard({ tag, onEdit, onDelete }: TagCardProps) {
             </div>
           </div>
 
-          {/* Action buttons - hidden by default, shown on hover */}
-          <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+          {/* Action buttons - always visible on mobile, hover-reveal on desktop */}
+          <div className="flex gap-1 transition-opacity md:opacity-0 md:group-hover:opacity-100">
             <Button
               variant="ghost"
               size="icon"

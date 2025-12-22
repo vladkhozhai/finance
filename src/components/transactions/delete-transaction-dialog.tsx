@@ -12,6 +12,7 @@ import {
   deleteTransaction,
   type TransactionWithRelations,
 } from "@/app/actions/transactions";
+import { deleteTransfer } from "@/app/actions/transfers";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -44,16 +45,29 @@ export function DeleteTransactionDialog({
 
     setIsDeleting(true);
 
-    const result = await deleteTransaction({ id: transaction.id });
+    // Use deleteTransfer for transfer transactions
+    const result =
+      transaction.type === "transfer"
+        ? await deleteTransfer({ transactionId: transaction.id })
+        : await deleteTransaction({ id: transaction.id });
 
     setIsDeleting(false);
 
     if (result.success) {
-      showSuccess("Transaction deleted successfully");
+      showSuccess(
+        transaction.type === "transfer"
+          ? "Transfer deleted successfully"
+          : "Transaction deleted successfully",
+      );
       onOpenChange(false);
       onSuccess?.();
     } else {
-      showError(result.error || "Failed to delete transaction");
+      showError(
+        result.error ||
+          (transaction.type === "transfer"
+            ? "Failed to delete transfer"
+            : "Failed to delete transaction"),
+      );
     }
   };
 
@@ -76,17 +90,20 @@ export function DeleteTransactionDialog({
 
   if (!transaction) return null;
 
+  const isTransfer = transaction.type === "transfer";
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-destructive" />
-            Delete Transaction
+            Delete {isTransfer ? "Transfer" : "Transaction"}
           </DialogTitle>
           <DialogDescription>
-            This action cannot be undone. This will permanently delete this
-            transaction from your records.
+            This action cannot be undone. This will permanently delete this{" "}
+            {isTransfer ? "transfer" : "transaction"} from your records.
+            {isTransfer && " Both sides of the transfer will be deleted."}
           </DialogDescription>
         </DialogHeader>
 
@@ -104,31 +121,44 @@ export function DeleteTransactionDialog({
               <div className="text-right">
                 <p
                   className={`text-lg font-bold ${
-                    transaction.type === "income"
-                      ? "text-green-600"
-                      : "text-red-600"
+                    isTransfer
+                      ? "text-blue-600"
+                      : transaction.type === "income"
+                        ? "text-green-600"
+                        : "text-red-600"
                   }`}
                 >
-                  {transaction.type === "income" ? "+" : "-"}$
-                  {formatAmount(transaction.amount)}
+                  {!isTransfer && (transaction.type === "income" ? "+" : "-")}$
+                  {formatAmount(Math.abs(transaction.amount))}
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 pt-2 border-t">
-              <div
-                className="h-3 w-3 rounded-full"
-                style={{ backgroundColor: transaction.category.color }}
-              />
-              <span className="text-sm text-muted-foreground">
-                {transaction.category.name}
-              </span>
-            </div>
+            {!isTransfer && transaction.category && (
+              <div className="flex items-center gap-2 pt-2 border-t">
+                <div
+                  className="h-3 w-3 rounded-full"
+                  style={{ backgroundColor: transaction.category.color }}
+                />
+                <span className="text-sm text-muted-foreground">
+                  {transaction.category.name}
+                </span>
+              </div>
+            )}
+            {isTransfer && transaction.payment_method && (
+              <div className="flex items-center gap-2 pt-2 border-t">
+                <span className="text-sm text-muted-foreground">
+                  {transaction.amount < 0 ? "From" : "To"}{" "}
+                  {transaction.payment_method.name}
+                </span>
+              </div>
+            )}
           </div>
 
           <p className="text-sm text-muted-foreground">
-            Are you sure you want to delete this transaction? This will affect
-            your balance and budget calculations.
+            Are you sure you want to delete this{" "}
+            {isTransfer ? "transfer" : "transaction"}? This will affect your
+            balance{!isTransfer && " and budget calculations"}.
           </p>
         </div>
 
@@ -151,7 +181,7 @@ export function DeleteTransactionDialog({
                 Deleting...
               </>
             ) : (
-              "Delete Transaction"
+              `Delete ${isTransfer ? "Transfer" : "Transaction"}`
             )}
           </Button>
         </DialogFooter>

@@ -5,7 +5,10 @@
 
 -- Function to create default categories for new users
 CREATE OR REPLACE FUNCTION create_default_categories()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+SECURITY DEFINER
+SET search_path = public
+AS $$
 BEGIN
   -- Insert default expense categories with thoughtful color coding
   INSERT INTO categories (user_id, name, type, color) VALUES
@@ -30,7 +33,7 @@ BEGIN
 
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql;
 
 -- Drop existing trigger if it exists (for idempotency)
 DROP TRIGGER IF EXISTS trigger_create_default_categories ON profiles;

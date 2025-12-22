@@ -8,21 +8,22 @@
 
 import { Filter } from "lucide-react";
 import { useEffect, useState } from "react";
+import { getUserProfile } from "@/app/actions/profile";
 import {
   getBalance,
   getTransactions,
   type TransactionWithRelations,
 } from "@/app/actions/transactions";
-import { getUserProfile } from "@/app/actions/profile";
 import {
   BalanceSummary,
   CreateTransactionDialog,
   DeleteTransactionDialog,
   EditTransactionDialog,
   TransactionFilters,
-  TransactionList,
   type TransactionFiltersState,
+  TransactionList,
 } from "@/components/transactions";
+import { CreateTransferDialog } from "@/components/transfers";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -144,6 +145,7 @@ export default function TransactionsPage() {
             <Filter className="h-5 w-5 mr-2" />
             Filters
           </Button>
+          <CreateTransferDialog onSuccess={handleSuccess} />
           <CreateTransactionDialog onSuccess={handleSuccess} />
         </div>
       </div>

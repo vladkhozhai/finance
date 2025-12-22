@@ -1,12 +1,15 @@
 /**
  * TypeBadge Component
  *
- * Displays a badge indicating transaction type (Income/Expense) with icon.
+ * Displays a badge indicating transaction type (Income/Expense/Transfer) with icon.
+ * - Income: Green badge with up arrow (TrendingUp)
+ * - Expense: Red badge with down arrow (TrendingDown)
+ * - Transfer: Blue outline badge with bidirectional arrow (ArrowRightLeft)
  */
 
 "use client";
 
-import { TrendingDown, TrendingUp } from "lucide-react";
+import { ArrowRightLeft, TrendingDown, TrendingUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
@@ -22,15 +25,25 @@ export function TypeBadge({
   showIcon = true,
 }: TypeBadgeProps) {
   const isIncome = type === "income";
-  const Icon = isIncome ? TrendingUp : TrendingDown;
+  const isTransfer = type === "transfer";
+  const Icon = isTransfer
+    ? ArrowRightLeft
+    : isIncome
+      ? TrendingUp
+      : TrendingDown;
 
   return (
     <Badge
-      variant={isIncome ? "default" : "destructive"}
-      className={cn("gap-1", className)}
+      variant={isTransfer ? "outline" : isIncome ? "default" : "destructive"}
+      className={cn(
+        "gap-1",
+        isTransfer &&
+          "border-blue-500 text-blue-700 dark:border-blue-400 dark:text-blue-300",
+        className,
+      )}
     >
       {showIcon && <Icon className="h-3 w-3" />}
-      {isIncome ? "Income" : "Expense"}
+      {isTransfer ? "Transfer" : isIncome ? "Income" : "Expense"}
     </Badge>
   );
 }

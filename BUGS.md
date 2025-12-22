@@ -6,6 +6,333 @@ This file tracks all bugs found during E2E testing.
 
 ## 🔴 CRITICAL BUGS
 
+### BUG-015: Transfer Creation Fails - Database Constraint Violation
+**Status**: 🔴 OPEN - **BLOCKS TRANSFER FEATURE**
+**Priority**: P0 - CRITICAL
+**Severity**: 100% TRANSFER CREATION FAILURE - DATABASE CONSTRAINT VIOLATION
+**Assigned To**: Backend Developer (03)
+**Found By**: QA Engineer (05)
+**Date Found**: 2025-12-22
+**Test Iteration**: Transfer Feature Testing (Card #43) - Post BUG-014 Fix
+**Environment**: Local Development
+
+**Summary**:
+Transfer creation completely fails due to database constraint violation. The withdrawal transaction attempts to insert a **negative amount** into the `transactions` table, but the database has a CHECK constraint (`chk_transactions_native_amount_positive`) that requires `native_amount` to always be positive.
+
+**Error Message (Server Logs)**:
+```
+Withdrawal transaction error: {
+  code: '23514',
+  details: null,
+  hint: null,
+  message: 'new row for relation "transactions" violates check constraint "chk_transactions_native_amount_positive"'
+}
+```
+
+**Root Cause**:
+The `createTransfer` Server Action creates two transactions:
+1. **Withdrawal** transaction (source account) - attempts to store as NEGATIVE amount
+2. **Deposit** transaction (destination account) - stores as POSITIVE amount
+
+However, the database schema requires `native_amount` to be positive at all times. The transaction `type` field should indicate whether it's income/expense/transfer_in/transfer_out, NOT the sign of the amount.
+
+**Code Location**:
+`/src/app/actions/transfers.ts` - `createTransfer()` function
+
+**Suspected Code Issue**:
+```typescript
+// Withdrawal transaction - INCORRECT
+const withdrawalAmount = -Math.abs(amount); // ❌ Negative value
+
+// Should be:
+const withdrawalAmount = Math.abs(amount); // ✅ Positive value
+// type: "transfer_out" or similar
+```
+
+**Steps to Reproduce**:
+1. Create 2+ payment accounts (e.g., "Cash USD" and "Card USD")
+2. Add balance to source account ($500 via income transaction)
+3. Navigate to `/transactions`
+4. Click "New Transfer" button
+5. Select source account: Cash USD
+6. Select destination account: Card USD
+7. Enter amount: $100
+8. Enter description: "Test transfer"
+9. Click "Create Transfer"
+
+**Expected Behavior**:
+- ✅ Two transactions created (withdrawal + deposit)
+- ✅ Withdrawal: type="transfer_out", amount=100 (positive), payment_method_id=source
+- ✅ Deposit: type="transfer_in", amount=100 (positive), payment_method_id=destination
+- ✅ Both linked via `linked_transaction_id`
+- ✅ Success toast appears
+- ✅ Dialog closes
+- ✅ Transactions appear in list
+- ✅ Balances update correctly
+
+**Actual Behavior**:
+- ❌ Transfer creation fails silently
+- ❌ No error message shown to user
+- ❌ No transactions created
+- ❌ Dialog stays open with loading state
+- ❌ Server logs show database constraint violation
+- ❌ No success toast
+- ❌ Balances unchanged
+
+**Impact**:
+- ❌ 100% of transfer attempts fail
+- ❌ Transfer feature completely broken
+- ❌ Cannot test ANY transfer functionality
+- ❌ Blocks 12 planned test scenarios:
+  - Same-currency transfers
+  - Cross-currency transfers
+  - Form validation
+  - Transfer display
+  - Balance calculations
+  - Atomic deletion
+  - Budget exclusion
+  - Mobile responsiveness
+  - Exchange rate preview
+  - Edge cases
+
+**Technical Details**:
+Database constraint from migrations:
+```sql
+ALTER TABLE transactions
+ADD CONSTRAINT chk_transactions_native_amount_positive
+CHECK (native_amount > 0);
+```
+
+This constraint ensures all amounts are stored as positive values, using the `type` field to indicate direction.
+
+**Proposed Fix**:
+Update `/src/app/actions/transfers.ts` - `createTransfer()` function:
+
+```typescript
+// Create withdrawal transaction (source account)
+const withdrawalData = {
+  user_id: user.id,
+  payment_method_id: sourcePaymentMethodId,
+  amount: Math.abs(amount), // ✅ Store as positive
+  native_amount: Math.abs(amount), // ✅ Store as positive
+  type: "transfer_out" as const, // ✅ Indicate direction via type
+  date: dateString,
+  description: transferDescription,
+  category_id: null, // Transfers have no category
+  linked_transaction_id: null, // Will update after deposit created
+};
+
+// Create deposit transaction (destination account)
+const depositData = {
+  user_id: user.id,
+  payment_method_id: destinationPaymentMethodId,
+  amount: Math.abs(destinationAmount), // ✅ Store as positive
+  native_amount: Math.abs(destinationAmount), // ✅ Store as positive
+  type: "transfer_in" as const, // ✅ Indicate direction via type
+  date: dateString,
+  description: transferDescription,
+  category_id: null,
+  linked_transaction_id: withdrawalResult.data.id, // Link to withdrawal
+};
+```
+
+**Affected Files**:
+- `/src/app/actions/transfers.ts` - Server Action (needs fix)
+- `supabase/migrations/*_transactions_table.sql` - Database schema (correct, no change needed)
+- `/src/components/transfers/create-transfer-dialog.tsx` - Client component (no changes needed)
+
+**Evidence**:
+- Screenshot: `/Users/vladislav.khozhai/WebstormProjects/finance/bug_015_disabled_dropdowns.png`
+- Server Logs: Constraint violation error captured
+- Test Session: Phase 2 - Transfer Creation Tests (blocked)
+
+**Additional Issue Discovered**:
+The transfer dialog also has a separate bug where the "From" and "To" dropdowns are **disabled** when the dialog opens, preventing users from selecting accounts. This appears to be a loading state issue where `isLoadingPaymentMethods` stays `true` indefinitely.
+
+**Verification Steps (After Fix)**:
+1. Apply fix to `createTransfer()` function
+2. Restart dev server
+3. Create transfer: Cash USD → Card USD, $100
+4. Verify: Two transactions appear in list
+5. Verify: Cash USD balance decreases by $100
+6. Verify: Card USD balance increases by $100
+7. Verify: Both transactions show "Transfer" type with blue styling
+8. Verify: Delete one transaction deletes both (atomic deletion)
+
+**Related Issues**:
+- BUG-014: Transfer build error (RESOLVED)
+- Trello Card #43: Transfer Between Payment Accounts (blocked)
+
+**Testing Blocked**:
+All transfer feature tests blocked:
+- ❌ Same-currency transfer creation
+- ❌ Cross-currency transfer creation
+- ❌ Form validation tests
+- ❌ Transfer display tests
+- ❌ Balance impact tests
+- ❌ Atomic deletion tests
+- ❌ Budget exclusion tests
+- ❌ Mobile responsiveness tests
+- ❌ Exchange rate preview tests
+- ❌ Edge case tests
+
+**Notes**:
+- This is a **logic bug** in the Server Action, not a schema issue
+- The database constraint is correct and should NOT be removed
+- The fix requires storing amounts as positive and using `type` field for direction
+- Silent failure is poor UX - should show error toast to user
+
+---
+
+### BUG-014: Transfer Feature Breaks Transactions Page - Build Error
+**Status**: ✅ RESOLVED
+**Priority**: P0 - CRITICAL
+**Severity**: 100% TRANSACTIONS PAGE DOWNTIME - BUILD FAILURE
+**Assigned To**: Backend Developer (03)
+**Found By**: QA Engineer (05)
+**Date Found**: 2025-12-22
+**Date Resolved**: 2025-12-22
+**Resolution Time**: ~30 minutes
+**Test Iteration**: Transfer Feature Testing (Card #43)
+**Environment**: Local Development
+
+**Summary**:
+The Transfer feature (Card #43) introduced a critical build error that makes the entire Transactions page unusable. Client component `CreateTransferDialog` imports server-side code through dependency chain, violating Next.js App Router server/client boundary.
+
+**Error Message**:
+```
+Error: x You're importing a component that needs "next/headers". That only works in a Server Component which is not supported in the pages/ directory.
+```
+
+**Root Cause - Import Chain Violation**:
+```
+transactions/page.tsx (Server Component)
+  └─> create-transfer-dialog.tsx ("use client")
+      └─> currency-conversion.ts (utility)
+          └─> exchange-rate-service.ts (service)
+              └─> supabase/server.ts (USES next/headers - SERVER ONLY!)
+```
+
+**Technical Details**:
+1. `CreateTransferDialog` is a client component (`"use client"` directive at line 7)
+2. Imports `getExchangeRate` from `currency-conversion.ts` (line 47)
+3. Which imports `exchangeRateService` from `exchange-rate-service.ts` (line 9)
+4. Which imports `createServerClient` from `supabase/server.ts` (lines 22-24)
+5. Which uses `next/headers` - only available in Server Components
+
+**Evidence**:
+- Screenshot: `/Users/vladislav.khozhai/WebstormProjects/finance/bug_critical_build_error.png`
+- Detailed Report: `/Users/vladislav.khozhai/WebstormProjects/finance/BUG_CRITICAL_TRANSFER_BUILD_ERROR.md`
+
+**Server Logs**:
+```
+GET /transactions 500 in 2961ms
+ ⨯ ./src/lib/supabase/server.ts
+Import trace for requested module:
+./src/lib/supabase/server.ts
+./src/lib/services/exchange-rate-service.ts
+./src/lib/utils/currency-conversion.ts
+./src/components/transfers/create-transfer-dialog.tsx
+./src/app/(dashboard)/transactions/page.tsx
+```
+
+**Impact**:
+- ❌ Transactions page completely broken (HTTP 500)
+- ❌ Cannot test ANY transfer functionality
+- ❌ Cannot add transactions to test balances
+- ❌ All E2E testing blocked
+- ❌ Feature testing completely blocked
+
+**Proposed Fix (RECOMMENDED)**:
+Create Server Action for exchange rate fetching:
+```typescript
+// src/app/actions/exchange-rates.ts
+"use server";
+
+export async function getExchangeRateAction(
+  fromCurrency: string,
+  toCurrency: string
+): Promise<number | null> {
+  // Use server-side exchange rate service here
+  return await exchangeRateService.getRate(fromCurrency, toCurrency);
+}
+```
+
+Then update client component:
+```typescript
+// In create-transfer-dialog.tsx
+import { getExchangeRateAction } from "@/app/actions/exchange-rates";
+
+// Replace direct import with Server Action call
+const rate = await getExchangeRateAction(fromCurrency, toCurrency);
+```
+
+**Why This Fix Works**:
+1. Server Actions maintain proper server/client boundary
+2. Client component calls action instead of importing server code
+3. Keeps Supabase server client secure in Server Components
+4. Follows Next.js App Router best practices
+
+**Alternative Fixes**:
+- Option 2: Create client-safe exchange rate service using browser Supabase client
+- Option 3: Use API route endpoint instead of direct import
+
+**Affected Files**:
+- `/src/components/transfers/create-transfer-dialog.tsx` (client component)
+- `/src/lib/utils/currency-conversion.ts` (imports server code)
+- `/src/lib/services/exchange-rate-service.ts` (uses server Supabase)
+- `/src/lib/supabase/server.ts` (uses next/headers)
+
+**Testing Blocked**:
+All Transfer feature tests blocked:
+- Same-currency transfer creation
+- Cross-currency transfer with exchange rate
+- Transfer form validation
+- Transfer display (blue theme, icons)
+- Balance impact verification
+- Atomic deletion
+- Budget exclusion
+- Mobile responsiveness
+- Error handling
+
+**Notes**:
+- Feature was not tested in clean build before committing
+- Suggests need for pre-commit build checks
+- This is an architecture issue, not a simple bug
+
+**Related Issues**:
+- Trello Card #43 (Transfer Between Payment Accounts)
+
+**Fix Applied**:
+Created Server Action wrapper to maintain proper server/client boundaries:
+1. New file: `/src/app/actions/exchange-rates.ts` (Server Action)
+2. Updated: `/src/components/transfers/create-transfer-dialog.tsx` (uses Server Action)
+
+**Files Changed**:
+- Created: `/src/app/actions/exchange-rates.ts` - Server Action for exchange rate fetching
+- Updated: `/src/components/transfers/create-transfer-dialog.tsx` - Import changed from utility to Server Action
+  - Line 47: Import changed from `@/lib/utils/currency-conversion` to `@/app/actions/exchange-rates`
+  - Lines 154-174: Updated to use Server Action response format
+
+**Verification**:
+- ✅ Build succeeds: `npm run build`
+- ✅ Dev server runs: `npm run dev`
+- ✅ Transactions page loads (HTTP 307 redirect - expected)
+- ✅ No console errors
+- ✅ Transfer dialog compiles successfully
+- ⏳ Pending QA: Exchange rate preview functionality
+
+**Documentation**:
+- Fix Summary: `/BUG_014_FIX_SUMMARY.md`
+- Verification Script: `/scripts/verify-bug-014-fix.ts`
+
+**Next Steps**:
+- QA: Test transfer dialog opens correctly
+- QA: Test exchange rate preview displays
+- QA: Test transfer creation end-to-end
+
+---
+
 ### BUG-013: BUG-006 Fix Not Deployed to Production - Vercel Deployment Failure
 **Status**: 🔴 OPEN - **BLOCKS PRODUCTION APPROVAL**
 **Priority**: P0 - CRITICAL
@@ -807,8 +1134,8 @@ Page title rendered as `<h2>` inside `<CardTitle>` component.
 
 ## 📊 Bug Statistics
 
-**Total Bugs**: 9
-**Critical**: 7 (2 resolved, 5 open)
+**Total Bugs**: 10
+**Critical**: 8 (2 resolved, 6 open)
 **Medium**: 2 (0 resolved, 2 open)
 **Low**: 0
 
@@ -817,16 +1144,17 @@ Page title rendered as `<h2>` inside `<CardTitle>` component.
 - Routing: 2 (0 resolved, 2 open - BUG-002, BUG-011)
 - Accessibility: 2 (0 resolved, 2 open - BUG-003, BUG-004)
 - Deployment: 1 (0 resolved, 1 open - BUG-013)
+- Architecture: 1 (0 resolved, 1 open - BUG-014)
 
 **By Status**:
-- Open: 7
+- Open: 8
 - In Progress: 0
 - Resolved: 2
 - Verified: 0 (pending QA)
 
 **By Environment**:
 - Production Only: 3 (BUG-010, BUG-011, BUG-013)
-- Local Development: 4 (BUG-001, BUG-002, BUG-003, BUG-004)
+- Local Development: 5 (BUG-001, BUG-002, BUG-003, BUG-004, BUG-014)
 - All Environments: 2 (BUG-009 resolved, BUG_P0_PRODUCTION_001 resolved)
 
 ---
@@ -877,3 +1205,144 @@ Page title rendered as `<h2>` inside `<CardTitle>` component.
 - ✅ Deployment pipeline functioning
 
 **Full Test Report**: `/Users/vladislav.khozhai/WebstormProjects/finance/PRODUCTION_DEPLOYMENT_TEST_REPORT.md`
+### BUG-017: Transfer Display Logic Errors (3 Sub-Bugs)
+**Status**: 🔴 OPEN - **BLOCKS ALL TRANSFER TESTING**
+**Priority**: P0 - CRITICAL
+**Severity**: TRANSFER FEATURE DISPLAYS INCORRECTLY - CONFUSING UX
+**Assigned To**: Frontend Developer (04) + Backend Developer (03)
+**Found By**: QA Engineer (05)
+**Date Found**: 2025-12-22
+**Test Iteration**: Transfer Feature Verification (Card #43) - Phase 1.2
+**Environment**: Local Development
+
+**Summary**:
+After fixing BUG-014 and BUG-015, transfer creation works BUT displays incorrectly with three critical UI bugs: inverted direction labels, wrong type badges, and incorrect balance calculations.
+
+**Sub-Bugs**:
+
+**BUG-017A**: Inverted Transfer Direction Labels
+- **Severity**: HIGH (P1)
+- **Component**: `transaction-card.tsx` (Lines 82-86)
+- **Issue**: Logic determines direction labels backwards
+  - Withdrawals show "Transfer: From" (should be "Transfer: To")
+  - Deposits show "Transfer: To" (should be "Transfer: From")
+- **Impact**: Users cannot tell which direction money is moving
+
+**BUG-017B**: Transfer Type Badge Shows "Expense"
+- **Severity**: HIGH (P1)
+- **Component**: `type-badge.tsx` (Lines 24-33)
+- **Issue**: Component doesn't handle `type="transfer"`, defaults to "Expense" (red badge)
+- **Expected**: Should show blue "Transfer" badge with ArrowRightLeft icon
+- **Impact**: Transfers look like expenses, confusing for users
+
+**BUG-017C**: Balance Calculations Incorrect
+- **Severity**: CRITICAL (P0)
+- **Component**: Multiple files (balance calculation logic)
+- **Issues**:
+  - Transactions page shows $700 total (inflated by $200)
+  - Payment account balances don't update after transfers
+  - Cash USD: $500 (should be $400 after $100 withdrawal)
+  - Card USD: $0 (should be $100 after $100 deposit)
+- **Impact**: Users see wrong balances, cannot trust financial data
+
+**Evidence**:
+- Detailed Report: `/BUG_017_TRANSFER_DISPLAY.md`
+- Screenshot 1: Inflated balance ($700 instead of $500)
+- Screenshot 2: Both transfers showing as "Expense" with wrong labels
+
+**Steps to Reproduce**:
+1. Navigate to `/transactions`
+2. Click "New Transfer"
+3. Transfer $100 from Cash USD to Card USD
+4. Observe transaction list
+
+**Expected Behavior**:
+```
+Transfer: To Card USD - $100 [Transfer badge, blue] (withdrawal from Cash)
+Transfer: From Cash USD - $100 [Transfer badge, blue] (deposit to Card)
+Total Balance: $500 (unchanged)
+Cash USD: $400 ($500 - $100)
+Card USD: $100 ($0 + $100)
+```
+
+**Actual Behavior**:
+```
+Transfer: From Card USD - $100 [Expense badge, red] ❌
+Transfer: To Cash USD - $100 [Expense badge, red] ❌
+Total Balance: $700 (inflated!) ❌
+Cash USD: $500 (unchanged!) ❌
+Card USD: $0 (unchanged!) ❌
+```
+
+**Impact**:
+- ❌ Transfers display with wrong labels and badges
+- ❌ Balance calculations completely wrong
+- ❌ Cannot proceed with remaining 16 test scenarios
+- ❌ Transfer feature unusable despite working server logic
+
+**Quick Fixes**:
+
+**Fix 017A** (`transaction-card.tsx` line 82-86):
+```diff
+- {transaction.description?.toLowerCase().includes("transfer to")
+-   ? "Transfer: From"
+-   : "Transfer: To"}{" "}
++ {transaction.description?.toLowerCase().includes("transfer to")
++   ? "Transfer: To"
++   : "Transfer: From"}{" "}
+```
+
+**Fix 017B** (`type-badge.tsx` lines 24-33):
+```typescript
+import { ArrowRightLeft, TrendingDown, TrendingUp } from "lucide-react";
+
+const isIncome = type === "income";
+const isTransfer = type === "transfer";
+const Icon = isTransfer ? ArrowRightLeft : isIncome ? TrendingUp : TrendingDown;
+
+<Badge
+  variant={isTransfer ? "outline" : isIncome ? "default" : "destructive"}
+  className={cn("gap-1", isTransfer && "border-blue-500 text-blue-600", className)}
+>
+  {showIcon && <Icon className="h-3 w-3" />}
+  {isTransfer ? "Transfer" : isIncome ? "Income" : "Expense"}
+</Badge>
+```
+
+**Fix 017C**: 
+- Exclude `type="transfer"` from income/expense totals
+- Fix payment account balance calculations to properly handle transfers
+
+**Testing Blocked**:
+ALL 16 remaining transfer test scenarios blocked:
+- Same-currency transfers
+- Cross-currency transfers
+- Form validation
+- Visual design verification
+- Balance calculations
+- Atomic deletion
+- Budget exclusion
+- Mobile responsiveness
+- Exchange rate service
+- Error handling
+- Performance testing
+
+**Related Issues**:
+- ✅ BUG-014: Server/client boundary violation (RESOLVED)
+- ✅ BUG-015: Database constraint violation (RESOLVED)
+- ❌ BUG-017: Transfer display logic errors (THIS ISSUE)
+
+**Verification Steps (After Fix)**:
+1. Create transfer: Cash USD → Card USD, $100
+2. Verify: Correct labels ("Transfer: To" on withdrawal, "Transfer: From" on deposit)
+3. Verify: Blue "Transfer" badges (not red "Expense")
+4. Verify: Total balance remains $500 (unchanged)
+5. Verify: Cash USD shows $400 ($500 - $100)
+6. Verify: Card USD shows $100 ($0 + $100)
+
+**Notes**:
+- Database and server actions work correctly (type="transfer" stored properly)
+- Issue is purely in frontend display components
+- Three separate bugs but all affect transfer feature UX
+
+---

@@ -66,17 +66,17 @@ export function TagCombobox({
 
   // Get selected tag objects
   const selectedTagObjects = localTags.filter((tag) =>
-    selectedTags.includes(tag.id)
+    selectedTags.includes(tag.id),
   );
 
   // Filter available tags based on search (case-insensitive)
   const filteredTags = localTags.filter((tag) =>
-    tag.name.toLowerCase().includes(searchValue.toLowerCase())
+    tag.name.toLowerCase().includes(searchValue.toLowerCase()),
   );
 
   // Check if search value exactly matches an existing tag (case-insensitive)
   const exactMatch = filteredTags.some(
-    (tag) => tag.name.toLowerCase() === searchValue.trim().toLowerCase()
+    (tag) => tag.name.toLowerCase() === searchValue.trim().toLowerCase(),
   );
 
   // Determine if we can create a new tag
@@ -95,7 +95,7 @@ export function TagCombobox({
   // Handle tag removal from badge
   const handleRemove = (
     tagId: string,
-    e: React.MouseEvent<HTMLButtonElement>
+    e: React.MouseEvent<HTMLButtonElement>,
   ) => {
     e.preventDefault();
     e.stopPropagation();
@@ -143,11 +143,7 @@ export function TagCombobox({
       {selectedTagObjects.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {selectedTagObjects.map((tag) => (
-            <Badge
-              key={tag.id}
-              variant="secondary"
-              className="gap-1 pl-2 pr-1"
-            >
+            <Badge key={tag.id} variant="secondary" className="gap-1 pl-2 pr-1">
               #{tag.name}
               <button
                 type="button"
@@ -225,7 +221,7 @@ export function TagCombobox({
                         "mr-2 h-4 w-4",
                         selectedTags.includes(tag.id)
                           ? "opacity-100"
-                          : "opacity-0"
+                          : "opacity-0",
                       )}
                     />
                     #{tag.name}

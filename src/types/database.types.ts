@@ -253,14 +253,15 @@ export type Database = {
         Row: {
           amount: number;
           base_currency: string | null;
-          category_id: string;
+          category_id: string | null;
           created_at: string;
           date: string;
           description: string | null;
           exchange_rate: number | null;
           id: string;
+          linked_transaction_id: string | null;
           native_amount: number | null;
-          payment_method_id: string | null;
+          payment_method_id: string;
           type: string;
           updated_at: string;
           user_id: string;
@@ -268,14 +269,15 @@ export type Database = {
         Insert: {
           amount: number;
           base_currency?: string | null;
-          category_id: string;
+          category_id?: string | null;
           created_at?: string;
           date?: string;
           description?: string | null;
           exchange_rate?: number | null;
           id?: string;
+          linked_transaction_id?: string | null;
           native_amount?: number | null;
-          payment_method_id?: string | null;
+          payment_method_id: string;
           type?: string;
           updated_at?: string;
           user_id: string;
@@ -283,14 +285,15 @@ export type Database = {
         Update: {
           amount?: number;
           base_currency?: string | null;
-          category_id?: string;
+          category_id?: string | null;
           created_at?: string;
           date?: string;
           description?: string | null;
           exchange_rate?: number | null;
           id?: string;
+          linked_transaction_id?: string | null;
           native_amount?: number | null;
-          payment_method_id?: string | null;
+          payment_method_id?: string;
           type?: string;
           updated_at?: string;
           user_id?: string;
@@ -301,6 +304,13 @@ export type Database = {
             columns: ["category_id"];
             isOneToOne: false;
             referencedRelation: "categories";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "transactions_linked_transaction_id_fkey";
+            columns: ["linked_transaction_id"];
+            isOneToOne: false;
+            referencedRelation: "transactions";
             referencedColumns: ["id"];
           },
           {
@@ -323,6 +333,7 @@ export type Database = {
           is_overspent: boolean | null;
           period: string | null;
           period_end: string | null;
+          period_start: string | null;
           spent_amount: number | null;
           spent_percentage: number | null;
           tag_id: string | null;
@@ -337,6 +348,7 @@ export type Database = {
           is_overspent?: never;
           period?: string | null;
           period_end?: never;
+          period_start?: never;
           spent_amount?: never;
           spent_percentage?: never;
           tag_id?: string | null;
@@ -351,6 +363,7 @@ export type Database = {
           is_overspent?: never;
           period?: string | null;
           period_end?: never;
+          period_start?: never;
           spent_amount?: never;
           spent_percentage?: never;
           tag_id?: string | null;
@@ -376,15 +389,25 @@ export type Database = {
       };
     };
     Functions: {
-      calculate_budget_spent: {
-        Args: {
-          p_category_id?: string;
-          p_period?: string;
-          p_tag_id?: string;
-          p_user_id: string;
-        };
-        Returns: number;
-      };
+      calculate_budget_spent:
+        | {
+            Args: {
+              p_category_id?: string;
+              p_period?: string;
+              p_tag_id?: string;
+              p_user_id: string;
+            };
+            Returns: number;
+          }
+        | {
+            Args: {
+              p_category_id?: string;
+              p_period?: string;
+              p_tag_id?: string;
+              p_user_id: string;
+            };
+            Returns: number;
+          };
       cleanup_old_rates: { Args: never; Returns: number };
       convert_amount: {
         Args: {
@@ -946,26 +969,44 @@ export type Database = {
         Returns: undefined;
       };
       operation: { Args: never; Returns: string };
-      search: {
-        Args: {
-          bucketname: string;
-          levels?: number;
-          limits?: number;
-          offsets?: number;
-          prefix: string;
-          search?: string;
-          sortcolumn?: string;
-          sortorder?: string;
-        };
-        Returns: {
-          created_at: string;
-          id: string;
-          last_accessed_at: string;
-          metadata: Json;
-          name: string;
-          updated_at: string;
-        }[];
-      };
+      search:
+        | {
+            Args: {
+              bucketname: string;
+              levels?: number;
+              limits?: number;
+              offsets?: number;
+              prefix: string;
+            };
+            Returns: {
+              created_at: string;
+              id: string;
+              last_accessed_at: string;
+              metadata: Json;
+              name: string;
+              updated_at: string;
+            }[];
+          }
+        | {
+            Args: {
+              bucketname: string;
+              levels?: number;
+              limits?: number;
+              offsets?: number;
+              prefix: string;
+              search?: string;
+              sortcolumn?: string;
+              sortorder?: string;
+            };
+            Returns: {
+              created_at: string;
+              id: string;
+              last_accessed_at: string;
+              metadata: Json;
+              name: string;
+              updated_at: string;
+            }[];
+          };
       search_legacy_v1: {
         Args: {
           bucketname: string;
@@ -1006,27 +1047,45 @@ export type Database = {
           updated_at: string;
         }[];
       };
-      search_v2: {
-        Args: {
-          bucket_name: string;
-          levels?: number;
-          limits?: number;
-          prefix: string;
-          sort_column?: string;
-          sort_column_after?: string;
-          sort_order?: string;
-          start_after?: string;
-        };
-        Returns: {
-          created_at: string;
-          id: string;
-          key: string;
-          last_accessed_at: string;
-          metadata: Json;
-          name: string;
-          updated_at: string;
-        }[];
-      };
+      search_v2:
+        | {
+            Args: {
+              bucket_name: string;
+              levels?: number;
+              limits?: number;
+              prefix: string;
+              start_after?: string;
+            };
+            Returns: {
+              created_at: string;
+              id: string;
+              key: string;
+              metadata: Json;
+              name: string;
+              updated_at: string;
+            }[];
+          }
+        | {
+            Args: {
+              bucket_name: string;
+              levels?: number;
+              limits?: number;
+              prefix: string;
+              sort_column?: string;
+              sort_column_after?: string;
+              sort_order?: string;
+              start_after?: string;
+            };
+            Returns: {
+              created_at: string;
+              id: string;
+              key: string;
+              last_accessed_at: string;
+              metadata: Json;
+              name: string;
+              updated_at: string;
+            }[];
+          };
     };
     Enums: {
       buckettype: "STANDARD" | "ANALYTICS" | "VECTOR";

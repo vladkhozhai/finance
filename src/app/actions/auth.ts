@@ -94,6 +94,8 @@ export async function signUp(data: SignUpInput) {
 
   // Note: Profile is automatically created by database trigger (handle_new_user)
   // The trigger reads currency from raw_user_meta_data
+  // After profile creation, the create_default_categories trigger automatically
+  // creates 15 default categories (11 expense + 4 income) for the new user
 
   // Revalidate and redirect on success to login with confirmation notice
   revalidatePath("/", "layout");

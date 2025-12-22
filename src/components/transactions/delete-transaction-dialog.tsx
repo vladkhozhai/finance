@@ -15,13 +15,13 @@ import {
 import { deleteTransfer } from "@/app/actions/transfers";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogDescription,
+  ResponsiveDialogFooter,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+} from "@/components/ui/responsive-dialog";
 import { useToast } from "@/lib/hooks/use-toast";
 
 interface DeleteTransactionDialogProps {
@@ -93,19 +93,19 @@ export function DeleteTransactionDialog({
   const isTransfer = transaction.type === "transfer";
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+    <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
+      <ResponsiveDialogContent className="max-w-md">
+        <ResponsiveDialogHeader>
+          <ResponsiveDialogTitle className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-destructive" />
             Delete {isTransfer ? "Transfer" : "Transaction"}
-          </DialogTitle>
-          <DialogDescription>
+          </ResponsiveDialogTitle>
+          <ResponsiveDialogDescription>
             This action cannot be undone. This will permanently delete this{" "}
             {isTransfer ? "transfer" : "transaction"} from your records.
             {isTransfer && " Both sides of the transfer will be deleted."}
-          </DialogDescription>
-        </DialogHeader>
+          </ResponsiveDialogDescription>
+        </ResponsiveDialogHeader>
 
         <div className="space-y-3 py-4">
           <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-4 space-y-2">
@@ -162,7 +162,7 @@ export function DeleteTransactionDialog({
           </p>
         </div>
 
-        <DialogFooter>
+        <ResponsiveDialogFooter>
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
@@ -184,8 +184,8 @@ export function DeleteTransactionDialog({
               `Delete ${isTransfer ? "Transfer" : "Transaction"}`
             )}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </ResponsiveDialogFooter>
+      </ResponsiveDialogContent>
+    </ResponsiveDialog>
   );
 }

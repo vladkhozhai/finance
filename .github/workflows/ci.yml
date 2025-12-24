@@ -14,6 +14,8 @@ concurrency:
 env:
   NODE_VERSION: '20.x'
   PLAYWRIGHT_VERSION: '1.57.0'
+  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  TURBO_TEAM: ${{ vars.TURBO_TEAM }}
 
 jobs:
   # ==============================================================================
@@ -39,16 +41,16 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run Biome linter
+      - name: Run Turborepo lint
         run: npm run lint
 
       - name: TypeScript type check
-        run: npx tsc --noEmit
+        run: cd apps/finance-web && npx tsc --noEmit
 
   # ==============================================================================
   # JOB 2: BUILD
   # ==============================================================================
-  # Validates that the Next.js application builds successfully
+  # Validates that the Next.js application builds successfully using Turborepo
   # Duration: ~1-2 minutes
   build:
     name: Build Application
@@ -68,7 +70,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build Next.js application
+      - name: Build with Turborepo
         run: npm run build
         env:
           # Required for Next.js build (uses dummy values for CI)
@@ -80,7 +82,7 @@ jobs:
         if: success()
         with:
           name: build-output
-          path: .next/
+          path: apps/finance-web/.next/
           retention-days: 7
 
   # ==============================================================================
@@ -107,7 +109,7 @@ jobs:
         run: npm ci
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+        run: cd apps/finance-web && npx playwright install --with-deps chromium
 
       - name: Run Playwright tests
         run: npm run test
@@ -123,7 +125,7 @@ jobs:
         if: failure()
         with:
           name: playwright-report
-          path: playwright-report/
+          path: apps/finance-web/playwright-report/
           retention-days: 14
 
       - name: Upload test results
@@ -131,7 +133,7 @@ jobs:
         if: failure()
         with:
           name: test-results
-          path: test-results/
+          path: apps/finance-web/test-results/
           retention-days: 14
 
   # ==============================================================================

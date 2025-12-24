@@ -1,0 +1,5 @@
+# pnpm workspace configuration (reserved for future use)
+# When migrating to pnpm, this will define the workspace structure
+packages:
+  - "apps/*"
+  - "packages/*"

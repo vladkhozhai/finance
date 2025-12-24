@@ -16,6 +16,7 @@ interface TransactionListProps {
   isLoading?: boolean;
   onEdit: (transaction: TransactionWithRelations) => void;
   onDelete: (transaction: TransactionWithRelations) => void;
+  onTemplateSaved?: () => void; // Callback when template is successfully created
 }
 
 export function TransactionList({
@@ -24,6 +25,7 @@ export function TransactionList({
   isLoading = false,
   onEdit,
   onDelete,
+  onTemplateSaved,
 }: TransactionListProps) {
   // Loading state
   if (isLoading) {
@@ -65,6 +67,7 @@ export function TransactionList({
           currency={currency}
           onEdit={onEdit}
           onDelete={onDelete}
+          onTemplateSaved={onTemplateSaved}
         />
       ))}
     </div>

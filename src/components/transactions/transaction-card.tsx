@@ -11,14 +11,17 @@ import {
   Calendar,
   CreditCard,
   Edit,
+  FileText,
   Trash2,
 } from "lucide-react";
+import { useState } from "react";
 import type { TransactionWithRelations } from "@/app/actions/transactions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/utils/currency";
+import { SaveAsTemplateDialog } from "./save-as-template-dialog";
 import { TypeBadge } from "./type-badge";
 
 interface TransactionCardProps {
@@ -26,6 +29,7 @@ interface TransactionCardProps {
   currency?: string; // ISO currency code (e.g., "USD", "EUR", "UAH")
   onEdit: (transaction: TransactionWithRelations) => void;
   onDelete: (transaction: TransactionWithRelations) => void;
+  onTemplateSaved?: () => void; // Callback when template is successfully created
 }
 
 export function TransactionCard({
@@ -33,7 +37,9 @@ export function TransactionCard({
   currency = "USD",
   onEdit,
   onDelete,
+  onTemplateSaved,
 }: TransactionCardProps) {
+  const [isSaveAsTemplateOpen, setIsSaveAsTemplateOpen] = useState(false);
   const isIncome = transaction.type === "income";
   const isTransfer = transaction.type === "transfer";
   const hasPaymentMethod =
@@ -206,15 +212,26 @@ export function TransactionCard({
           <div className="flex gap-1 transition-opacity md:opacity-0 md:group-hover:opacity-100">
             {/* Hide edit button for transfers (transfers cannot be edited) */}
             {!isTransfer && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                onClick={() => onEdit(transaction)}
-                aria-label={`Edit transaction`}
-              >
-                <Edit className="h-4 w-4" />
-              </Button>
+              <>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                  onClick={() => onEdit(transaction)}
+                  aria-label="Edit transaction"
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                  onClick={() => setIsSaveAsTemplateOpen(true)}
+                  aria-label="Save as template"
+                >
+                  <FileText className="h-4 w-4" />
+                </Button>
+              </>
             )}
             <Button
               variant="ghost"
@@ -228,6 +245,16 @@ export function TransactionCard({
           </div>
         </div>
       </CardContent>
+
+      {/* Save as Template Dialog */}
+      {!isTransfer && (
+        <SaveAsTemplateDialog
+          transaction={transaction}
+          open={isSaveAsTemplateOpen}
+          onOpenChange={setIsSaveAsTemplateOpen}
+          onSuccess={onTemplateSaved}
+        />
+      )}
     </Card>
   );
 }

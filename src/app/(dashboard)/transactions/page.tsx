@@ -202,6 +202,7 @@ export default function TransactionsPage() {
             isLoading={isLoadingTransactions}
             onEdit={handleEdit}
             onDelete={handleDelete}
+            onTemplateSaved={handleSuccess}
           />
         </div>
 

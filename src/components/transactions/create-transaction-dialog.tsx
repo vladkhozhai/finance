@@ -9,12 +9,18 @@
 import {
   Calendar as CalendarIcon,
   CreditCard,
+  FileText,
   Loader2,
   Plus,
+  X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getCategories } from "@/app/actions/categories";
 import { getPaymentMethods } from "@/app/actions/payment-methods";
+import {
+  getTemplates,
+  type TemplateWithRelations,
+} from "@/app/actions/templates";
 import { createTransaction } from "@/app/actions/transactions";
 import { TagSelector } from "@/components/tags";
 import { Button } from "@/components/ui/button";
@@ -46,7 +52,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/lib/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { formatCurrency, getCurrencySymbol } from "@/lib/utils/currency";
+import { getCurrencySymbol } from "@/lib/utils/currency";
 import type { Tables } from "@/types/database.types";
 
 type Category = Tables<"categories">;
@@ -67,6 +73,10 @@ export function CreateTransactionDialog({
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [isLoadingPaymentMethods, setIsLoadingPaymentMethods] = useState(true);
+  const [templates, setTemplates] = useState<TemplateWithRelations[]>([]);
+  const [isLoadingTemplates, setIsLoadingTemplates] = useState(true);
+  const [selectedTemplate, setSelectedTemplate] =
+    useState<TemplateWithRelations | null>(null);
 
   // Form state
   const [type, setType] = useState<string>("expense");
@@ -84,16 +94,19 @@ export function CreateTransactionDialog({
 
   const { success: showSuccess, error: showError } = useToast();
 
-  // Fetch categories and payment methods
+  // Fetch categories, payment methods, and templates
   useEffect(() => {
     const fetchData = async () => {
       setIsLoadingCategories(true);
       setIsLoadingPaymentMethods(true);
+      setIsLoadingTemplates(true);
 
-      const [categoriesResult, paymentMethodsResult] = await Promise.all([
-        getCategories(),
-        getPaymentMethods({ isActive: true, limit: 50, offset: 0 }),
-      ]);
+      const [categoriesResult, paymentMethodsResult, templatesResult] =
+        await Promise.all([
+          getCategories(),
+          getPaymentMethods({ isActive: true, limit: 50, offset: 0 }),
+          getTemplates(),
+        ]);
 
       if (categoriesResult.success) {
         setCategories(categoriesResult.data || []);
@@ -119,8 +132,16 @@ export function CreateTransactionDialog({
         );
       }
 
+      if (templatesResult.success) {
+        setTemplates(templatesResult.data || []);
+      } else {
+        // Silently fail for templates - non-critical
+        setTemplates([]);
+      }
+
       setIsLoadingCategories(false);
       setIsLoadingPaymentMethods(false);
+      setIsLoadingTemplates(false);
     };
 
     if (open) {
@@ -132,6 +153,66 @@ export function CreateTransactionDialog({
   const filteredCategories = categories.filter(
     (category) => category.type === type,
   );
+
+  // Apply template to form
+  const applyTemplate = (template: TemplateWithRelations) => {
+    setSelectedTemplate(template);
+
+    // Set type based on category type (if available)
+    if (template.category?.type) {
+      setType(template.category.type);
+    }
+
+    // Set amount (if template has fixed amount)
+    if (template.amount !== null) {
+      setAmount(template.amount.toString());
+    } else {
+      setAmount(""); // Variable price - user must enter
+    }
+
+    // Set category
+    if (template.category_id) {
+      setCategoryId(template.category_id);
+    }
+
+    // Set payment method and currency
+    if (template.payment_method_id) {
+      setPaymentMethodId(template.payment_method_id);
+      if (template.payment_method?.currency) {
+        setSelectedCurrency(template.payment_method.currency);
+      }
+    }
+
+    // Set description
+    if (template.description) {
+      setDescription(template.description);
+    }
+
+    // Set tags
+    if (template.template_tags && template.template_tags.length > 0) {
+      setSelectedTagIds(template.template_tags.map((tt) => tt.tag.id));
+    }
+  };
+
+  // Clear template selection
+  const clearTemplate = () => {
+    setSelectedTemplate(null);
+    setType("expense");
+    setAmount("");
+    setCategoryId("");
+    setDescription("");
+    setSelectedTagIds([]);
+
+    // Reset to default payment method if available
+    const defaultPM = paymentMethods.find((pm) => pm.is_default);
+    if (defaultPM) {
+      setPaymentMethodId(defaultPM.id);
+      setSelectedCurrency(defaultPM.currency);
+    } else {
+      setPaymentMethodId("");
+      setSelectedCurrency(baseCurrency);
+    }
+  };
 
   // Reset category when type changes
   useEffect(() => {
@@ -221,6 +302,7 @@ export function CreateTransactionDialog({
       setPaymentMethodId("");
       setSelectedCurrency(baseCurrency);
       setErrors({});
+      setSelectedTemplate(null);
     }, 200);
   };
 
@@ -254,6 +336,70 @@ export function CreateTransactionDialog({
         </ResponsiveDialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Template Selector */}
+          {templates.length > 0 && (
+            <div className="space-y-2">
+              <Label>Use Template (optional)</Label>
+              {selectedTemplate ? (
+                <div className="flex items-center gap-2 p-3 rounded-lg border bg-muted/50">
+                  <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">
+                      {selectedTemplate.name}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {selectedTemplate.category?.name || "No category"}
+                      {selectedTemplate.amount !== null &&
+                        ` · ${selectedTemplate.amount}`}
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearTemplate}
+                    className="h-8 w-8 p-0 shrink-0"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <Select
+                  value=""
+                  onValueChange={(templateId) => {
+                    const template = templates.find((t) => t.id === templateId);
+                    if (template) {
+                      applyTemplate(template);
+                    }
+                  }}
+                  disabled={isLoadingTemplates}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a template to pre-fill..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {templates.map((template) => (
+                      <SelectItem key={template.id} value={template.id}>
+                        <div className="flex items-center gap-2">
+                          <FileText className="h-3.5 w-3.5" />
+                          <span>{template.name}</span>
+                          {template.amount !== null && (
+                            <span className="text-muted-foreground text-xs">
+                              ({template.amount})
+                            </span>
+                          )}
+                          {template.is_favorite && (
+                            <span className="text-yellow-500 text-xs">★</span>
+                          )}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+          )}
+
           {/* Type Selection */}
           <div className="space-y-2">
             <Label>Type</Label>

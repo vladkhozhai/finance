@@ -13,6 +13,7 @@
 import {
   ChevronDown,
   CreditCard,
+  FileText,
   FolderOpen,
   Settings,
   Tag,
@@ -38,6 +39,7 @@ const navItems = [
   },
   { href: "/profile/categories", label: "Categories", icon: FolderOpen },
   { href: "/profile/tags", label: "Tags", icon: Tag },
+  { href: "/profile/templates", label: "Templates", icon: FileText },
   { href: "/profile/preferences", label: "Preferences", icon: Settings },
 ];
 

@@ -1,0 +1,16 @@
+{
+  "name": "@platform/config",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Shared configuration files for the platform monorepo",
+  "exports": {
+    "./typescript/base": "./typescript/base.json",
+    "./typescript/nextjs": "./typescript/nextjs.json",
+    "./typescript/library": "./typescript/library.json",
+    "./biome": "./biome/biome.json"
+  },
+  "files": [
+    "typescript",
+    "biome"
+  ]
+}

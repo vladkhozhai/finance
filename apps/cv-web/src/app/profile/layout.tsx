@@ -1,4 +1,14 @@
-import { FileText, User, Link as LinkIcon, Briefcase } from "lucide-react";
+import {
+  FileText,
+  User,
+  Link as LinkIcon,
+  Briefcase,
+  GraduationCap,
+  Lightbulb,
+  FolderGit2,
+  Award,
+  Languages,
+} from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
@@ -26,6 +36,31 @@ const navItems = [
     href: "/profile/experience",
     label: "Work Experience",
     icon: Briefcase,
+  },
+  {
+    href: "/profile/education",
+    label: "Education",
+    icon: GraduationCap,
+  },
+  {
+    href: "/profile/skills",
+    label: "Skills",
+    icon: Lightbulb,
+  },
+  {
+    href: "/profile/projects",
+    label: "Projects",
+    icon: FolderGit2,
+  },
+  {
+    href: "/profile/certifications",
+    label: "Certifications",
+    icon: Award,
+  },
+  {
+    href: "/profile/languages",
+    label: "Languages",
+    icon: Languages,
   },
 ];
 

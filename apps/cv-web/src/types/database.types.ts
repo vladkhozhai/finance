@@ -87,6 +87,123 @@ export type Database = {
         }
         Relationships: []
       }
+      cv_certifications: {
+        Row: {
+          certification_name: string
+          created_at: string
+          credential_id: string | null
+          credential_url: string | null
+          display_order: number | null
+          expiration_date: string | null
+          id: string
+          issue_date: string
+          issuing_organization: string
+          user_id: string
+        }
+        Insert: {
+          certification_name: string
+          created_at?: string
+          credential_id?: string | null
+          credential_url?: string | null
+          display_order?: number | null
+          expiration_date?: string | null
+          id?: string
+          issue_date: string
+          issuing_organization: string
+          user_id: string
+        }
+        Update: {
+          certification_name?: string
+          created_at?: string
+          credential_id?: string | null
+          credential_url?: string | null
+          display_order?: number | null
+          expiration_date?: string | null
+          id?: string
+          issue_date?: string
+          issuing_organization?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      cv_education: {
+        Row: {
+          created_at: string
+          degree: string
+          description: string | null
+          display_order: number | null
+          end_date: string | null
+          field_of_study: string
+          gpa: string | null
+          id: string
+          institution_name: string
+          is_current: boolean | null
+          location: string | null
+          start_date: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          degree: string
+          description?: string | null
+          display_order?: number | null
+          end_date?: string | null
+          field_of_study: string
+          gpa?: string | null
+          id?: string
+          institution_name: string
+          is_current?: boolean | null
+          location?: string | null
+          start_date: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          degree?: string
+          description?: string | null
+          display_order?: number | null
+          end_date?: string | null
+          field_of_study?: string
+          gpa?: string | null
+          id?: string
+          institution_name?: string
+          is_current?: boolean | null
+          location?: string | null
+          start_date?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      cv_languages: {
+        Row: {
+          created_at: string
+          display_order: number | null
+          id: string
+          language_name: string
+          proficiency: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          language_name: string
+          proficiency: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          language_name?: string
+          proficiency?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       cv_profiles: {
         Row: {
           address_city: string | null
@@ -141,6 +258,84 @@ export type Database = {
         }
         Relationships: []
       }
+      cv_projects: {
+        Row: {
+          created_at: string
+          description: string | null
+          display_order: number | null
+          end_date: string | null
+          id: string
+          is_ongoing: boolean | null
+          project_name: string
+          project_url: string | null
+          role: string | null
+          start_date: string | null
+          technologies: string[] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          end_date?: string | null
+          id?: string
+          is_ongoing?: boolean | null
+          project_name: string
+          project_url?: string | null
+          role?: string | null
+          start_date?: string | null
+          technologies?: string[] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          end_date?: string | null
+          id?: string
+          is_ongoing?: boolean | null
+          project_name?: string
+          project_url?: string | null
+          role?: string | null
+          start_date?: string | null
+          technologies?: string[] | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      cv_skills: {
+        Row: {
+          category: string | null
+          created_at: string
+          display_order: number | null
+          id: string
+          proficiency_level: string | null
+          skill_name: string
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          proficiency_level?: string | null
+          skill_name: string
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          proficiency_level?: string | null
+          skill_name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       cv_social_links: {
         Row: {
           created_at: string
@@ -164,6 +359,36 @@ export type Database = {
           id?: string
           platform?: string
           url?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      cv_user_settings: {
+        Row: {
+          font_family: string | null
+          id: string
+          sections_visibility: Json | null
+          selected_template_id: string | null
+          theme_color: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          font_family?: string | null
+          id?: string
+          sections_visibility?: Json | null
+          selected_template_id?: string | null
+          theme_color?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          font_family?: string | null
+          id?: string
+          sections_visibility?: Json | null
+          selected_template_id?: string | null
+          theme_color?: string | null
+          updated_at?: string
           user_id?: string
         }
         Relationships: []

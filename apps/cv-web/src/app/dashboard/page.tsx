@@ -1,4 +1,5 @@
 import { FileText, Plus, Download, Eye } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -67,10 +68,12 @@ export default async function DashboardPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col items-center gap-4">
-            <Button size="lg" className="w-full max-w-xs">
-              <Plus className="mr-2 h-5 w-5" />
-              Start Building Your CV
-            </Button>
+            <Link href="/profile/personal" className="w-full max-w-xs">
+              <Button size="lg" className="w-full">
+                <Plus className="mr-2 h-5 w-5" />
+                Start Building Your CV
+              </Button>
+            </Link>
 
             <div className="flex gap-4 mt-4">
               <Button variant="outline" size="sm" disabled>
@@ -108,20 +111,25 @@ export default async function DashboardPage() {
 
           <div className="mt-6 grid gap-3">
             {[
-              "Personal Information",
-              "Work Experience",
-              "Education",
-              "Skills",
-              "Projects",
-              "Certifications",
+              { name: "Personal Information", href: "/profile/personal" },
+              { name: "Work Experience", href: "/profile/experience" },
+              { name: "Education", href: "#" },
+              { name: "Skills", href: "#" },
+              { name: "Projects", href: "#" },
+              { name: "Certifications", href: "#" },
             ].map((section) => (
-              <div
-                key={section}
-                className="flex items-center justify-between p-3 rounded-lg border bg-white dark:bg-zinc-950"
+              <Link
+                key={section.name}
+                href={section.href}
+                className={`flex items-center justify-between p-3 rounded-lg border bg-white dark:bg-zinc-950 ${
+                  section.href !== "#"
+                    ? "hover:bg-zinc-50 dark:hover:bg-zinc-900 cursor-pointer transition-colors"
+                    : "cursor-not-allowed opacity-60"
+                }`}
               >
-                <span className="text-sm">{section}</span>
+                <span className="text-sm">{section.name}</span>
                 <span className="text-xs text-muted-foreground">Not started</span>
-              </div>
+              </Link>
             ))}
           </div>
         </div>

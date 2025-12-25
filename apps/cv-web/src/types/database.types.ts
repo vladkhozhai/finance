@@ -141,6 +141,87 @@ export type Database = {
         }
         Relationships: []
       }
+      cv_social_links: {
+        Row: {
+          created_at: string
+          display_order: number | null
+          id: string
+          platform: string
+          url: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          platform: string
+          url: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          platform?: string
+          url?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      cv_work_experiences: {
+        Row: {
+          achievements: string[] | null
+          company_name: string
+          created_at: string
+          description: string | null
+          display_order: number | null
+          employment_type: string | null
+          end_date: string | null
+          id: string
+          is_current: boolean | null
+          is_remote: boolean | null
+          job_title: string
+          location: string | null
+          start_date: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          achievements?: string[] | null
+          company_name: string
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          employment_type?: string | null
+          end_date?: string | null
+          id?: string
+          is_current?: boolean | null
+          is_remote?: boolean | null
+          job_title: string
+          location?: string | null
+          start_date: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          achievements?: string[] | null
+          company_name?: string
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          employment_type?: string | null
+          end_date?: string | null
+          id?: string
+          is_current?: boolean | null
+          is_remote?: boolean | null
+          job_title?: string
+          location?: string | null
+          start_date?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       exchange_rates: {
         Row: {
           api_provider: string | null

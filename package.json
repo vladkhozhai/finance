@@ -16,7 +16,10 @@
     "validate-migrations": "tsx scripts/validate-migrations.ts"
   },
   "devDependencies": {
-    "turbo": "^2.7.2",
-    "tsx": "^4.21.0"
+    "tsx": "^4.21.0",
+    "turbo": "^2.7.2"
+  },
+  "dependencies": {
+    "@react-pdf/renderer": "^4.3.1"
   }
 }

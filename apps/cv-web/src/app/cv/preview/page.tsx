@@ -57,6 +57,7 @@ function CVPreviewContent() {
     templateParam
   );
   const [isLoading, setIsLoading] = useState(true);
+  const [isDownloading, setIsDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [scale, setScale] = useState(0.7);
 
@@ -94,6 +95,52 @@ function CVPreviewContent() {
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleDownloadPDF = async () => {
+    if (!currentTemplate) return;
+
+    setIsDownloading(true);
+    setError(null);
+
+    try {
+      // Get template slug from name
+      const templateSlug = currentTemplate.template_name.toLowerCase();
+
+      // Fetch PDF from API
+      const response = await fetch(`/api/cv/pdf?template=${templateSlug}`);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to generate PDF");
+      }
+
+      // Get filename from Content-Disposition header or use default
+      const contentDisposition = response.headers.get("Content-Disposition");
+      let filename = "CV.pdf";
+      if (contentDisposition) {
+        const matches = contentDisposition.match(/filename="(.+)"/);
+        if (matches && matches[1]) {
+          filename = matches[1];
+        }
+      }
+
+      // Create blob and download
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Download error:", err);
+      setError(err instanceof Error ? err.message : "Failed to download PDF");
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   const handleTemplateChange = (templateId: string) => {
@@ -270,9 +317,13 @@ function CVPreviewContent() {
                 Print
               </Button>
 
-              <Button>
-                <Download className="mr-2 h-4 w-4" />
-                Download PDF
+              <Button onClick={handleDownloadPDF} disabled={isDownloading || !templateProps}>
+                {isDownloading ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Download className="mr-2 h-4 w-4" />
+                )}
+                {isDownloading ? "Generating..." : "Download PDF"}
               </Button>
             </div>
           </div>

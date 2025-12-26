@@ -17,7 +17,12 @@ import type { Database } from "@/types/database.types";
 
 /**
  * Creates a Supabase client for browser use in Client Components.
- * Uses cookie-based auth with automatic cookie management.
+ * Uses cookie-based auth with automatic cookie management and persistent sessions.
+ *
+ * Features:
+ * - persistSession: true - Sessions persist across browser sessions
+ * - autoRefreshToken: true - Automatically refreshes tokens before expiry
+ * - Cookie storage - Tokens stored securely in HTTP-only cookies
  *
  * @returns Supabase browser client instance
  * @throws Error if required environment variables are missing
@@ -32,5 +37,11 @@ export function createClient() {
     );
   }
 
-  return createBrowserClient<Database>(supabaseUrl, supabaseAnonKey);
+  return createBrowserClient<Database>(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+    },
+  });
 }

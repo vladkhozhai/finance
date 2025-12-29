@@ -15,6 +15,16 @@ export const TEST_USER = {
  */
 export async function signUp(page: Page, email: string, password: string) {
   await page.goto("/sign-up");
+  await page.fill('input[name="firstName"]', "Test");
+  await page.fill('input[name="lastName"]', "User");
+  await page.fill('input[name="email"]', email);
+  await page.fill('input[name="password"]', password);
+  await page.click('button[type="submit"]');
+
+  // Wait for redirect to sign-in with confirmation pending
+  await expect(page).toHaveURL(/\/sign-in/, { timeout: 10000 });
+
+  // Now sign in with the same credentials to complete the flow
   await page.fill('input[name="email"]', email);
   await page.fill('input[name="password"]', password);
   await page.click('button[type="submit"]');

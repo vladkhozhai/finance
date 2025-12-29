@@ -58,14 +58,16 @@ export default function SkillsPage() {
     resolver: zodResolver(skillSchema),
   });
 
-  // Fetch skills
+  // Fetch skills using Server Action
   useEffect(() => {
     async function fetchSkills() {
       try {
-        const response = await fetch("/api/skills");
-        if (response.ok) {
-          const data = await response.json();
-          setSkills(data.skills || []);
+        const { getSkills } = await import("@/actions/skills");
+        const result = await getSkills();
+        if (result.success) {
+          setSkills(result.data);
+        } else {
+          console.error("Failed to fetch skills:", result.error);
         }
       } catch (err) {
         console.error("Failed to fetch skills:", err);

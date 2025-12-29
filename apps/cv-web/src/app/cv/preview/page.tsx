@@ -33,6 +33,15 @@ import {
   ModernTemplate,
   ProfessionalTemplate,
   CreativeTemplate,
+  MinimalTemplate,
+  ExecutiveTemplate,
+  TechnicalTemplate,
+  SimpleTemplate,
+  CompactTemplate,
+  CorporateTemplate,
+  AcademicTemplate,
+  ElegantTemplate,
+  DesignerTemplate,
   type CVTemplateProps,
 } from "@/components/cv-templates";
 
@@ -44,6 +53,15 @@ const TEMPLATE_COMPONENTS: Record<
   modern: ModernTemplate,
   professional: ProfessionalTemplate,
   creative: CreativeTemplate,
+  minimal: MinimalTemplate,
+  executive: ExecutiveTemplate,
+  technical: TechnicalTemplate,
+  simple: SimpleTemplate,
+  compact: CompactTemplate,
+  corporate: CorporateTemplate,
+  academic: AcademicTemplate,
+  elegant: ElegantTemplate,
+  designer: DesignerTemplate,
 };
 
 function CVPreviewContent() {
@@ -242,11 +260,33 @@ function CVPreviewContent() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading your CV...</p>
-        </div>
+      <div className="min-h-screen bg-zinc-100 dark:bg-zinc-900">
+        {/* Header Skeleton */}
+        <header className="border-b bg-white dark:bg-zinc-950 sticky top-0 z-50">
+          <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <FileText className="h-6 w-6 text-primary" />
+              <span className="font-bold text-xl">CVFlow</span>
+              <span className="text-muted-foreground">|</span>
+              <h1 className="font-semibold">CV Preview</h1>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="h-10 w-48 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse" />
+              <div className="h-10 w-32 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse" />
+            </div>
+          </div>
+        </header>
+
+        {/* Loading Content */}
+        <main className="py-8 flex items-center justify-center min-h-[calc(100vh-64px)]">
+          <div className="text-center">
+            <div className="mb-4 inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+            <h2 className="text-lg font-semibold mb-2">Loading your CV</h2>
+            <p className="text-muted-foreground">Preparing your professional resume...</p>
+          </div>
+        </main>
       </div>
     );
   }
@@ -330,34 +370,47 @@ function CVPreviewContent() {
         </div>
 
         {/* Zoom Controls */}
-        <div className="border-t bg-zinc-50 dark:bg-zinc-900 px-4 py-2">
+        <div className="border-t bg-zinc-50 dark:bg-zinc-900 px-4 py-3">
           <div className="container mx-auto flex items-center justify-between">
             <Link href="/profile/personal">
-              <Button variant="link" className="p-0 h-auto text-sm">
-                <ArrowLeft className="mr-1 h-3 w-3" />
+              <Button variant="ghost" size="sm">
+                <ArrowLeft className="mr-2 h-4 w-4" />
                 Edit Profile
               </Button>
             </Link>
 
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-muted-foreground">Zoom:</span>
+            <div className="flex items-center gap-3 bg-white dark:bg-zinc-950 px-4 py-2 rounded-lg border">
+              <span className="text-sm font-medium text-muted-foreground">Zoom</span>
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
                   size="sm"
+                  className="h-8 w-8 p-0"
                   onClick={() => setScale(Math.max(0.5, scale - 0.1))}
+                  disabled={scale <= 0.5}
                 >
                   -
                 </Button>
-                <span className="text-sm w-16 text-center">
+                <span className="text-sm font-medium w-16 text-center tabular-nums">
                   {Math.round(scale * 100)}%
                 </span>
                 <Button
                   variant="outline"
                   size="sm"
+                  className="h-8 w-8 p-0"
                   onClick={() => setScale(Math.min(1.5, scale + 0.1))}
+                  disabled={scale >= 1.5}
                 >
                   +
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setScale(0.7)}
+                  disabled={scale === 0.7}
+                  className="ml-2 text-xs"
+                >
+                  Reset
                 </Button>
               </div>
             </div>

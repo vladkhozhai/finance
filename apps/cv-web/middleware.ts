@@ -1,49 +1,39 @@
-import { NextResponse, type NextRequest } from "next/server";
+/**
+ * Next.js Middleware for CV Web App
+ *
+ * Protects routes requiring authentication and manages auth flow.
+ * Uses Supabase SSR for session management and token refresh.
+ */
 
-export function middleware(request: NextRequest) {
-  console.log("Middleware running for:", request.nextUrl.pathname);
+import { type NextRequest } from "next/server";
+import { updateSession } from "@/lib/supabase/middleware";
 
-  const pathname = request.nextUrl.pathname;
-
-  // Public routes that don't require authentication
-  const publicRoutes = [
-    "/sign-in",
-    "/sign-up",
-    "/forgot-password",
-    "/reset-password",
-    "/auth/callback",
-    "/auth/error",
-  ];
-
-  const isPublicRoute = publicRoutes.some((route) =>
-    pathname.startsWith(route)
-  );
-
-  // Check for auth cookie
-  const hasAuthCookie = request.cookies.getAll().some(cookie =>
-    cookie.name.includes("auth-token") || cookie.name.includes("sb-")
-  );
-
-  // If no auth cookie and not on public route, redirect to sign-in
-  if (!hasAuthCookie && !isPublicRoute && pathname !== "/") {
-    const url = request.nextUrl.clone();
-    url.pathname = "/sign-in";
-    url.searchParams.set("next", pathname);
-    return NextResponse.redirect(url);
-  }
-
-  // If no auth cookie and on root, redirect to sign-in
-  if (!hasAuthCookie && pathname === "/") {
-    const url = request.nextUrl.clone();
-    url.pathname = "/sign-in";
-    return NextResponse.redirect(url);
-  }
-
-  return NextResponse.next();
+/**
+ * Middleware function that runs on every request matching the config.
+ * Delegates to Supabase updateSession helper for auth verification.
+ */
+export async function middleware(request: NextRequest) {
+  return await updateSession(request);
 }
 
+/**
+ * Matcher configuration for middleware.
+ * Excludes:
+ * - Next.js internal routes (_next/*)
+ * - Static files (images, fonts, etc.)
+ * - API routes (/api/*)
+ * - favicon.ico
+ */
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - api (API routes)
+     * - Static file extensions (svg, png, jpg, jpeg, gif, webp, ico)
+     */
+    "/((?!_next/static|_next/image|favicon.ico|api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };

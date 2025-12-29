@@ -61,37 +61,39 @@ export async function updateSession(request: NextRequest) {
   // issues with users being randomly logged out.
 
   // Check if there's an auth token present to avoid slow auth check
-  const hasAuthCookie = request.cookies.has('sb-127-0-0-1-54321-auth-token') ||
-                        request.cookies.getAll().some(cookie =>
-                          cookie.name.includes('auth-token')
-                        );
+  const hasAuthCookie =
+    request.cookies.has("sb-127-0-0-1-54321-auth-token") ||
+    request.cookies.getAll().some((cookie) => cookie.name.includes("auth-token"));
 
-  // If no auth cookies, skip the slow getUser() call for public routes
+  // Define protected and public routes
   const pathname = request.nextUrl.pathname;
-  const publicRoutes = [
-    "/sign-in",
-    "/sign-up",
-    "/forgot-password",
-    "/reset-password",
-    "/auth/callback",
-    "/auth/error",
-  ];
-  const isPublicRoute = publicRoutes.some((route) =>
+
+  // Routes that require authentication
+  const protectedRoutes = ["/cv", "/profile", "/dashboard"];
+  const isProtectedRoute = protectedRoutes.some((route) =>
     pathname.startsWith(route),
   );
 
-  // Fast path: no auth cookie and trying to access protected route
-  if (!hasAuthCookie && !isPublicRoute && pathname !== "/") {
-    const url = request.nextUrl.clone();
-    url.pathname = "/sign-in";
-    url.searchParams.set("next", pathname);
-    return NextResponse.redirect(url);
+  // Public routes that don't require authentication
+  const publicRoutes = ["/", "/auth"];
+  const isPublicRoute =
+    pathname === "/" || publicRoutes.some((route) => pathname.startsWith(route));
+
+  // API routes and Next.js internals are always allowed
+  const isApiRoute = pathname.startsWith("/api");
+  const isNextInternalRoute =
+    pathname.startsWith("/_next") || pathname === "/favicon.ico";
+
+  // Skip auth check for API and internal routes
+  if (isApiRoute || isNextInternalRoute) {
+    return supabaseResponse;
   }
 
-  // Fast path: no auth cookie and on root
-  if (!hasAuthCookie && pathname === "/") {
+  // Fast path: no auth cookie and trying to access protected route
+  if (!hasAuthCookie && isProtectedRoute) {
     const url = request.nextUrl.clone();
-    url.pathname = "/sign-in";
+    url.pathname = "/auth/login";
+    url.searchParams.set("next", pathname);
     return NextResponse.redirect(url);
   }
 
@@ -106,25 +108,18 @@ export async function updateSession(request: NextRequest) {
   }
 
   // If user is not authenticated and trying to access protected route
-  if (!user && !isPublicRoute && pathname !== "/") {
+  if (!user && isProtectedRoute) {
     const url = request.nextUrl.clone();
-    url.pathname = "/sign-in";
+    url.pathname = "/auth/login";
     // Preserve the original URL as a 'next' parameter for post-login redirect
     url.searchParams.set("next", pathname);
     return NextResponse.redirect(url);
   }
 
-  // If user is authenticated and trying to access auth pages, redirect to dashboard
-  if (user && isPublicRoute) {
+  // If user is authenticated and trying to access auth login/signup pages, redirect to dashboard
+  if (user && pathname.startsWith("/auth/login")) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
-    return NextResponse.redirect(url);
-  }
-
-  // Redirect root to dashboard if authenticated, otherwise to sign-in
-  if (pathname === "/") {
-    const url = request.nextUrl.clone();
-    url.pathname = user ? "/dashboard" : "/sign-in";
     return NextResponse.redirect(url);
   }
 

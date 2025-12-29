@@ -251,16 +251,7 @@ export async function getTemplates(): Promise<ActionResult<CVTemplate[]>> {
   try {
     const supabase = await createClient();
 
-    // Get authenticated user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return { success: false, error: "Unauthorized" };
-    }
-
+    // Templates can be viewed by anyone (no auth required for viewing)
     // Fetch active templates
     const { data: templates, error: fetchError } = await supabase
       .from("cv_templates")

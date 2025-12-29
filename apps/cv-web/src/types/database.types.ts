@@ -126,39 +126,6 @@ export type Database = {
         }
         Relationships: []
       }
-      cv_templates: {
-        Row: {
-          id: string
-          template_name: string
-          template_slug: string
-          description: string | null
-          category: string
-          thumbnail_url: string | null
-          is_active: boolean
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          template_name: string
-          template_slug: string
-          description?: string | null
-          category: string
-          thumbnail_url?: string | null
-          is_active?: boolean
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          template_name?: string
-          template_slug?: string
-          description?: string | null
-          category?: string
-          thumbnail_url?: string | null
-          is_active?: boolean
-          created_at?: string
-        }
-        Relationships: []
-      }
       cv_education: {
         Row: {
           created_at: string
@@ -393,6 +360,39 @@ export type Database = {
           platform?: string
           url?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      cv_templates: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          template_name: string
+          template_slug: string
+          thumbnail_url: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          template_name: string
+          template_slug: string
+          thumbnail_url?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          template_name?: string
+          template_slug?: string
+          thumbnail_url?: string | null
         }
         Relationships: []
       }

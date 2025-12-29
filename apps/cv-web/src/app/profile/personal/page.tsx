@@ -41,21 +41,27 @@ export default function PersonalInfoPage() {
   useEffect(() => {
     async function fetchProfile() {
       try {
-        const response = await fetch("/api/profile");
-        if (response.ok) {
-          const data = await response.json();
-          if (data.profile) {
-            // Populate form with existing data
-            Object.keys(data.profile).forEach((key) => {
-              setValue(key as keyof ProfileInput, data.profile[key]);
-            });
-            if (data.profile.profile_photo_url) {
-              setProfilePhotoPreview(data.profile.profile_photo_url);
+        // Import and call server action directly for faster loading
+        const { getProfile } = await import("@/actions/profile");
+        const result = await getProfile();
+
+        if (result.success && result.data) {
+          // Populate form with existing data
+          Object.keys(result.data).forEach((key) => {
+            const value = result.data[key as keyof typeof result.data];
+            if (value !== undefined && key !== "id") {
+              setValue(key as keyof ProfileInput, value);
             }
+          });
+          if (result.data.profile_photo_url) {
+            setProfilePhotoPreview(result.data.profile_photo_url);
           }
+        } else if (!result.success) {
+          setError("Failed to load profile data");
         }
       } catch (err) {
         console.error("Failed to fetch profile:", err);
+        setError("Failed to load profile data");
       } finally {
         setIsFetching(false);
       }
@@ -89,8 +95,25 @@ export default function PersonalInfoPage() {
   if (isFetching) {
     return (
       <Card>
-        <CardContent className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <CardHeader>
+          <div className="space-y-2">
+            <div className="h-6 w-48 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse" />
+            <div className="h-4 w-64 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse" />
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="space-y-2">
+            <div className="h-4 w-24 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse" />
+            <div className="h-24 w-24 bg-zinc-200 dark:bg-zinc-800 rounded-full animate-pulse" />
+          </div>
+          <div className="grid grid-cols-3 gap-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="space-y-2">
+                <div className="h-4 w-20 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse" />
+                <div className="h-10 w-full bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse" />
+              </div>
+            ))}
+          </div>
         </CardContent>
       </Card>
     );
@@ -296,25 +319,30 @@ export default function PersonalInfoPage() {
           </div>
 
           {/* Submit Button */}
-          <div className="flex justify-end gap-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => reset()}
-              disabled={isLoading}
-            >
-              Reset
-            </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                "Save Changes"
-              )}
-            </Button>
+          <div className="flex justify-between items-center pt-4 border-t">
+            <p className="text-sm text-muted-foreground">
+              * Required fields
+            </p>
+            <div className="flex gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => reset()}
+                disabled={isLoading}
+              >
+                Reset
+              </Button>
+              <Button type="submit" disabled={isLoading} size="lg">
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  "Save Changes"
+                )}
+              </Button>
+            </div>
           </div>
         </form>
       </CardContent>

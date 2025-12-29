@@ -135,21 +135,27 @@ export const certificationSchema = z.object({
 
 export type CertificationInput = z.infer<typeof certificationSchema>;
 
-// Language Schema
+// Language Schema - CEFR Aligned
 export const LANGUAGE_PROFICIENCIES = [
-  { value: "Native", label: "Native" },
-  { value: "Fluent", label: "Fluent" },
-  { value: "Conversational", label: "Conversational" },
-  { value: "Basic", label: "Basic" },
+  { value: "A1", label: "Beginner (A1)", description: "Basic phrases, simple interactions" },
+  { value: "A2", label: "Elementary (A2)", description: "Routine tasks, simple terms" },
+  { value: "B1", label: "Pre-Intermediate (B1)", description: "Main points, standard dialect" },
+  { value: "B2", label: "Intermediate (B2)", description: "Complex text, technical discussions" },
+  { value: "C1", label: "Upper-Intermediate (C1)", description: "Demanding texts, implicit meaning" },
+  { value: "C2", label: "Advanced/Fluent (C2)", description: "Near-native, nuanced expression" },
+  { value: "Native", label: "Native", description: "Native speaker" },
 ] as const;
 
 export const languageSchema = z.object({
   language_name: z.string().min(1, "Language is required"),
   proficiency: z.enum([
+    "A1",
+    "A2",
+    "B1",
+    "B2",
+    "C1",
+    "C2",
     "Native",
-    "Fluent",
-    "Conversational",
-    "Basic",
   ]),
 });
 

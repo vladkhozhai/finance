@@ -4,10 +4,10 @@ import {
   ArrowLeft,
   ChevronLeft,
   ChevronRight,
-  Download,
   FileText,
   Loader2,
   Palette,
+  Printer,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -73,7 +73,6 @@ function CVPreviewContent() {
     templateParam,
   );
   const [isLoading, setIsLoading] = useState(true);
-  const [isDownloading, setIsDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [scale, setScale] = useState(0.7);
   const [isMobile, setIsMobile] = useState(false);
@@ -122,45 +121,8 @@ function CVPreviewContent() {
     fetchData();
   }, [currentTemplateId]);
 
-  const handleDownloadPDF = async () => {
-    if (!currentTemplate || isDownloading) return;
-
-    setIsDownloading(true);
-    try {
-      // Use the template_slug for the PDF API
-      const templateSlug = currentTemplate.template_slug;
-      const response = await fetch(`/api/cv/pdf?template=${templateSlug}`);
-
-      if (!response.ok) {
-        throw new Error("Failed to generate PDF");
-      }
-
-      // Get the filename from the Content-Disposition header or generate one
-      const contentDisposition = response.headers.get("Content-Disposition");
-      let filename = "CV.pdf";
-      if (contentDisposition) {
-        const match = contentDisposition.match(/filename="(.+)"/);
-        if (match) {
-          filename = match[1];
-        }
-      }
-
-      // Download the PDF
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-    } catch (err) {
-      console.error("PDF download error:", err);
-      setError("Failed to download PDF. Please try again.");
-    } finally {
-      setIsDownloading(false);
-    }
+  const handlePrint = () => {
+    window.print();
   };
 
   const handleTemplateChange = (templateId: string) => {
@@ -319,16 +281,8 @@ function CVPreviewContent() {
                   <Palette className="h-4 w-4" />
                 </Button>
               </Link>
-              <Button
-                onClick={handleDownloadPDF}
-                disabled={!templateProps || isDownloading}
-                size="sm"
-              >
-                {isDownloading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Download className="h-4 w-4" />
-                )}
+              <Button onClick={handlePrint} disabled={!templateProps} size="sm">
+                <Printer className="h-4 w-4" />
               </Button>
             </div>
 
@@ -380,16 +334,9 @@ function CVPreviewContent() {
                   </Button>
                 </Link>
 
-                <Button
-                  onClick={handleDownloadPDF}
-                  disabled={!templateProps || isDownloading}
-                >
-                  {isDownloading ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Download className="mr-2 h-4 w-4" />
-                  )}
-                  {isDownloading ? "Generating..." : "Download PDF"}
+                <Button onClick={handlePrint} disabled={!templateProps}>
+                  <Printer className="mr-2 h-4 w-4" />
+                  Print
                 </Button>
               </div>
             </div>
@@ -449,16 +396,12 @@ function CVPreviewContent() {
 
               <Button
                 size="sm"
-                onClick={handleDownloadPDF}
-                disabled={!templateProps || isDownloading}
+                onClick={handlePrint}
+                disabled={!templateProps}
                 className="flex-1"
               >
-                {isDownloading ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Download className="mr-2 h-4 w-4" />
-                )}
-                {isDownloading ? "Generating..." : "Download"}
+                <Printer className="mr-2 h-4 w-4" />
+                Print
               </Button>
             </div>
           </div>

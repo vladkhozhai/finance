@@ -13,7 +13,12 @@ import {
   Image,
 } from "@react-pdf/renderer";
 import type { PDFTemplateProps } from "./types";
-import { formatDateRange, getFullName, getLocation, getPlatformName } from "./utils";
+import {
+  formatDateRange,
+  getFullName,
+  getLocation,
+  getPlatformName,
+} from "./utils";
 
 // Define styles with vibrant colors
 const styles = StyleSheet.create({
@@ -431,8 +436,12 @@ export function CreativePDF({
                 {languages.map((lang, index) => (
                   <View key={index} style={styles.languageItem}>
                     <View style={styles.languageHeader}>
-                      <Text style={styles.languageName}>{lang.language_name}</Text>
-                      <Text style={styles.languageLevel}>{lang.proficiency}</Text>
+                      <Text style={styles.languageName}>
+                        {lang.language_name}
+                      </Text>
+                      <Text style={styles.languageLevel}>
+                        {lang.proficiency}
+                      </Text>
                     </View>
                     <View style={styles.languageBar}>
                       <View
@@ -472,8 +481,12 @@ export function CreativePDF({
                   <View key={index} style={styles.certItem}>
                     <View style={styles.certBullet} />
                     <View style={styles.certContent}>
-                      <Text style={styles.certName}>{cert.certification_name}</Text>
-                      <Text style={styles.certOrg}>{cert.issuing_organization}</Text>
+                      <Text style={styles.certName}>
+                        {cert.certification_name}
+                      </Text>
+                      <Text style={styles.certOrg}>
+                        {cert.issuing_organization}
+                      </Text>
                       <Text style={styles.certDate}>
                         {formatDateRange(cert.issue_date, null)}
                       </Text>
@@ -490,7 +503,9 @@ export function CreativePDF({
             {profile.professional_summary && (
               <View style={styles.section}>
                 <Text style={styles.sectionTitleAlt}>About Me</Text>
-                <Text style={styles.summary}>{profile.professional_summary}</Text>
+                <Text style={styles.summary}>
+                  {profile.professional_summary}
+                </Text>
               </View>
             )}
 
@@ -503,7 +518,11 @@ export function CreativePDF({
                     <View style={styles.experienceHeader}>
                       <Text style={styles.jobTitle}>{exp.job_title}</Text>
                       <Text style={styles.dateRange}>
-                        {formatDateRange(exp.start_date, exp.end_date, exp.is_current)}
+                        {formatDateRange(
+                          exp.start_date,
+                          exp.end_date,
+                          exp.is_current,
+                        )}
                       </Text>
                     </View>
                     <Text style={styles.company}>
@@ -519,7 +538,9 @@ export function CreativePDF({
                         {exp.achievements.map((achievement, idx) => (
                           <View key={idx} style={styles.achievement}>
                             <Text style={styles.achievementBullet}>▸</Text>
-                            <Text style={styles.achievementText}>{achievement}</Text>
+                            <Text style={styles.achievementText}>
+                              {achievement}
+                            </Text>
                           </View>
                         ))}
                       </View>
@@ -540,10 +561,16 @@ export function CreativePDF({
                         {edu.degree} in {edu.field_of_study}
                       </Text>
                       <Text style={styles.dateRange}>
-                        {formatDateRange(edu.start_date, edu.end_date, edu.is_current)}
+                        {formatDateRange(
+                          edu.start_date,
+                          edu.end_date,
+                          edu.is_current,
+                        )}
                       </Text>
                     </View>
-                    <Text style={styles.institution}>{edu.institution_name}</Text>
+                    <Text style={styles.institution}>
+                      {edu.institution_name}
+                    </Text>
                     {edu.gpa && <Text style={styles.gpa}>GPA: {edu.gpa}</Text>}
                     {edu.description && (
                       <Text style={styles.description}>{edu.description}</Text>
@@ -560,7 +587,9 @@ export function CreativePDF({
                 {projects.slice(0, 3).map((proj, index) => (
                   <View key={index} style={styles.projectCard}>
                     <Text style={styles.projectName}>{proj.project_name}</Text>
-                    {proj.role && <Text style={styles.projectRole}>{proj.role}</Text>}
+                    {proj.role && (
+                      <Text style={styles.projectRole}>{proj.role}</Text>
+                    )}
                     {proj.description && (
                       <Text style={styles.description}>{proj.description}</Text>
                     )}

@@ -21,7 +21,7 @@ export function formatDate(dateString: string | null | undefined): string {
 export function formatDateRange(
   startDate: string,
   endDate: string | null | undefined,
-  isCurrent?: boolean
+  isCurrent?: boolean,
 ): string {
   const start = formatDate(startDate);
   if (isCurrent) {
@@ -54,7 +54,7 @@ export function getFullName(profile: {
  */
 export function getLocation(
   city?: string | null,
-  country?: string | null
+  country?: string | null,
 ): string {
   const parts = [];
   if (city) parts.push(city);

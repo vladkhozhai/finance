@@ -1,21 +1,41 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
-import Link from "next/link";
 import {
-  FileText,
-  Loader2,
   ArrowLeft,
-  Download,
-  Palette,
-  Printer,
-  Share2,
   ChevronLeft,
   ChevronRight,
+  Download,
+  FileText,
+  Loader2,
+  Palette,
+  Printer,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import {
+  type CVData,
+  type CVTemplate,
+  getTemplates,
+  getUserCVData,
+} from "@/actions/cv-preview";
+import {
+  AcademicTemplate,
+  CompactTemplate,
+  CorporateTemplate,
+  CreativeTemplate,
+  type CVTemplateProps,
+  DesignerTemplate,
+  ElegantTemplate,
+  ExecutiveTemplate,
+  MinimalTemplate,
+  ModernTemplate,
+  ProfessionalTemplate,
+  SimpleTemplate,
+  TechnicalTemplate,
+} from "@/components/cv-templates";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -23,27 +43,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  getUserCVData,
-  getTemplates,
-  type CVData,
-  type CVTemplate,
-} from "@/actions/cv-preview";
-import {
-  ModernTemplate,
-  ProfessionalTemplate,
-  CreativeTemplate,
-  MinimalTemplate,
-  ExecutiveTemplate,
-  TechnicalTemplate,
-  SimpleTemplate,
-  CompactTemplate,
-  CorporateTemplate,
-  AcademicTemplate,
-  ElegantTemplate,
-  DesignerTemplate,
-  type CVTemplateProps,
-} from "@/components/cv-templates";
 
 // Map template slugs to components
 const TEMPLATE_COMPONENTS: Record<
@@ -78,6 +77,19 @@ function CVPreviewContent() {
   const [isDownloading, setIsDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [scale, setScale] = useState(0.7);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile viewport
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   // Fetch CV data and templates on mount
   useEffect(() => {
@@ -101,7 +113,7 @@ function CVPreviewContent() {
             setCurrentTemplateId(templatesResult.data[0].id);
           }
         }
-      } catch (err) {
+      } catch (_err) {
         setError("Failed to load CV data");
       } finally {
         setIsLoading(false);
@@ -138,7 +150,7 @@ function CVPreviewContent() {
       let filename = "CV.pdf";
       if (contentDisposition) {
         const matches = contentDisposition.match(/filename="(.+)"/);
-        if (matches && matches[1]) {
+        if (matches?.[1]) {
           filename = matches[1];
         }
       }
@@ -296,24 +308,120 @@ function CVPreviewContent() {
     <div className="min-h-screen bg-zinc-100 dark:bg-zinc-900 print:bg-white">
       {/* Header - Hidden on print */}
       <header className="border-b bg-white dark:bg-zinc-950 print:hidden sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link href="/dashboard" className="flex items-center gap-2">
-              <FileText className="h-6 w-6 text-primary" />
-              <span className="font-bold text-xl">CVFlow</span>
-            </Link>
-            <span className="text-muted-foreground">|</span>
-            <h1 className="font-semibold">CV Preview</h1>
-          </div>
+        {/* Top Bar - Logo and Brand */}
+        <div className="border-b md:border-b-0">
+          <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-2 sm:gap-4">
+              <Link href="/dashboard" className="flex items-center gap-2">
+                <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+                <span className="font-bold text-lg sm:text-xl">CVFlow</span>
+              </Link>
+              <span className="text-muted-foreground hidden sm:inline">|</span>
+              <h1 className="font-semibold text-sm sm:text-base hidden sm:block">
+                CV Preview
+              </h1>
+            </div>
 
-          <div className="flex items-center gap-4">
-            {/* Template Selector */}
-            <div className="flex items-center gap-2">
+            {/* Mobile: Primary actions only */}
+            <div className="flex items-center gap-2 md:hidden">
+              <Link href="/cv/templates">
+                <Button variant="outline" size="icon">
+                  <Palette className="h-4 w-4" />
+                </Button>
+              </Link>
+              <Button
+                onClick={handleDownloadPDF}
+                disabled={isDownloading || !templateProps}
+                size="sm"
+              >
+                {isDownloading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+
+            {/* Desktop: All actions */}
+            <div className="hidden md:flex items-center gap-4">
+              {/* Template Selector */}
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => navigateTemplate("prev")}
+                  disabled={templates.length <= 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+
+                <Select
+                  value={currentTemplateId || ""}
+                  onValueChange={handleTemplateChange}
+                >
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Select template" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {templates.map((template) => (
+                      <SelectItem key={template.id} value={template.id}>
+                        {template.template_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => navigateTemplate("next")}
+                  disabled={templates.length <= 1}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center gap-2">
+                <Link href="/cv/templates">
+                  <Button variant="outline">
+                    <Palette className="mr-2 h-4 w-4" />
+                    Templates
+                  </Button>
+                </Link>
+
+                <Button variant="outline" onClick={handlePrint}>
+                  <Printer className="mr-2 h-4 w-4" />
+                  Print
+                </Button>
+
+                <Button
+                  onClick={handleDownloadPDF}
+                  disabled={isDownloading || !templateProps}
+                >
+                  {isDownloading ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Download className="mr-2 h-4 w-4" />
+                  )}
+                  {isDownloading ? "Generating..." : "Download PDF"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile Template Selector & Actions */}
+        <div className="border-b md:hidden">
+          <div className="container mx-auto px-4 py-3">
+            {/* Template Navigation */}
+            <div className="flex items-center gap-2 mb-3">
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => navigateTemplate("prev")}
                 disabled={templates.length <= 1}
+                className="flex-shrink-0"
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
@@ -322,7 +430,7 @@ function CVPreviewContent() {
                 value={currentTemplateId || ""}
                 onValueChange={handleTemplateChange}
               >
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="flex-1">
                   <SelectValue placeholder="Select template" />
                 </SelectTrigger>
                 <SelectContent>
@@ -339,42 +447,36 @@ function CVPreviewContent() {
                 size="icon"
                 onClick={() => navigateTemplate("next")}
                 disabled={templates.length <= 1}
+                className="flex-shrink-0"
               >
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
 
-            {/* Actions */}
+            {/* Action Buttons Row */}
             <div className="flex items-center gap-2">
-              <Link href="/cv/templates">
-                <Button variant="outline">
-                  <Palette className="mr-2 h-4 w-4" />
-                  Templates
+              <Link href="/profile/personal" className="flex-1">
+                <Button variant="outline" size="sm" className="w-full">
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Edit
                 </Button>
               </Link>
 
-              <Button variant="outline" onClick={handlePrint}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handlePrint}
+                className="flex-1"
+              >
                 <Printer className="mr-2 h-4 w-4" />
                 Print
-              </Button>
-
-              <Button
-                onClick={handleDownloadPDF}
-                disabled={isDownloading || !templateProps}
-              >
-                {isDownloading ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Download className="mr-2 h-4 w-4" />
-                )}
-                {isDownloading ? "Generating..." : "Download PDF"}
               </Button>
             </div>
           </div>
         </div>
 
-        {/* Zoom Controls */}
-        <div className="border-t bg-zinc-50 dark:bg-zinc-900 px-4 py-3">
+        {/* Desktop: Zoom Controls & Edit Profile */}
+        <div className="border-t bg-zinc-50 dark:bg-zinc-900 px-4 py-3 hidden md:block">
           <div className="container mx-auto flex items-center justify-between">
             <Link href="/profile/personal">
               <Button variant="ghost" size="sm">
@@ -434,31 +536,32 @@ function CVPreviewContent() {
       )}
 
       {/* CV Preview Area */}
-      <main className="py-8 print:py-0">
+      <main className="py-4 md:py-8 print:py-0 px-2 md:px-4">
         <div
-          className="mx-auto print:transform-none print:w-full"
+          className="mx-auto print:transform-none print:w-full w-full md:w-auto"
           style={{
-            transform: `scale(${scale})`,
+            transform: isMobile ? "scale(1)" : `scale(${scale})`,
             transformOrigin: "top center",
-            width: "210mm", // A4 width
+            width: isMobile ? "100%" : "210mm",
+            maxWidth: isMobile ? "100%" : undefined,
           }}
         >
           {/* CV Paper */}
-          <div className="bg-white shadow-2xl print:shadow-none mx-auto">
+          <div className="bg-white shadow-lg md:shadow-2xl print:shadow-none mx-auto overflow-hidden">
             {templateProps ? (
               <TemplateComponent {...templateProps} />
             ) : (
-              <div className="p-12 text-center text-muted-foreground">
-                <FileText className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                <h3 className="text-xl font-semibold mb-2">
+              <div className="p-6 md:p-12 text-center text-muted-foreground">
+                <FileText className="h-12 w-12 md:h-16 md:w-16 mx-auto mb-4 opacity-50" />
+                <h3 className="text-lg md:text-xl font-semibold mb-2">
                   No profile data yet
                 </h3>
-                <p className="mb-4">
+                <p className="mb-4 text-sm md:text-base">
                   Start by adding your personal information to see your CV
                   preview.
                 </p>
                 <Link href="/profile/personal">
-                  <Button>
+                  <Button size="sm" className="md:h-10">
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     Go to Profile
                   </Button>

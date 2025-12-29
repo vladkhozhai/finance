@@ -5,7 +5,8 @@
  * Returns the PDF as a downloadable file.
  *
  * Query parameters:
- * - template: Template slug (modern, professional, creative)
+ * - template: Template slug (modern, professional, creative, minimal, executive,
+ *             technical, simple, compact, corporate, academic, elegant, designer)
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -43,13 +44,15 @@ export async function GET(request: NextRequest) {
 
     // Get template from query params
     const searchParams = request.nextUrl.searchParams;
-    const templateSlug = (searchParams.get("template") || "modern") as PDFTemplateId;
+    const templateSlug = (searchParams.get("template") ||
+      "modern") as PDFTemplateId;
 
     // Validate template
     if (!PDF_TEMPLATES[templateSlug]) {
+      const availableTemplates = Object.keys(PDF_TEMPLATES).join(", ");
       return NextResponse.json(
-        { error: "Invalid template. Use: modern, professional, or creative" },
-        { status: 400 }
+        { error: `Invalid template. Available templates: ${availableTemplates}` },
+        { status: 400 },
       );
     }
 
@@ -64,11 +67,7 @@ export async function GET(request: NextRequest) {
       certificationsResult,
       languagesResult,
     ] = await Promise.all([
-      supabase
-        .from("cv_profiles")
-        .select("*")
-        .eq("id", user.id)
-        .maybeSingle(),
+      supabase.from("cv_profiles").select("*").eq("id", user.id).maybeSingle(),
       supabase
         .from("cv_social_links")
         .select("*")
@@ -113,7 +112,7 @@ export async function GET(request: NextRequest) {
       console.error("Profile fetch error:", profileResult.error);
       return NextResponse.json(
         { error: "Failed to fetch profile data" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -198,7 +197,7 @@ export async function GET(request: NextRequest) {
 
     // Render PDF to buffer
     const pdfBuffer = await renderToBuffer(
-      <TemplateComponent {...templateProps} />
+      <TemplateComponent {...templateProps} />,
     );
 
     // Generate filename
@@ -225,7 +224,7 @@ export async function GET(request: NextRequest) {
     console.error("PDF generation error:", error);
     return NextResponse.json(
       { error: "Failed to generate PDF" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

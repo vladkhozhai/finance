@@ -8,7 +8,6 @@ import {
   FileText,
   Loader2,
   Palette,
-  Printer,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -74,7 +73,7 @@ function CVPreviewContent() {
     templateParam,
   );
   const [isLoading, setIsLoading] = useState(true);
-  // isDownloading state removed - now using browser print dialog
+  const [isDownloading, setIsDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [scale, setScale] = useState(0.7);
   const [isMobile, setIsMobile] = useState(false);
@@ -123,14 +122,45 @@ function CVPreviewContent() {
     fetchData();
   }, [currentTemplateId]);
 
-  const handlePrint = () => {
-    window.print();
-  };
+  const handleDownloadPDF = async () => {
+    if (!currentTemplate || isDownloading) return;
 
-  const handleDownloadPDF = () => {
-    // Use browser print dialog to save as PDF
-    // This ensures the PDF matches exactly what's shown in the preview
-    window.print();
+    setIsDownloading(true);
+    try {
+      // Use the template_slug for the PDF API
+      const templateSlug = currentTemplate.template_slug;
+      const response = await fetch(`/api/cv/pdf?template=${templateSlug}`);
+
+      if (!response.ok) {
+        throw new Error("Failed to generate PDF");
+      }
+
+      // Get the filename from the Content-Disposition header or generate one
+      const contentDisposition = response.headers.get("Content-Disposition");
+      let filename = "CV.pdf";
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename="(.+)"/);
+        if (match) {
+          filename = match[1];
+        }
+      }
+
+      // Download the PDF
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err) {
+      console.error("PDF download error:", err);
+      setError("Failed to download PDF. Please try again.");
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   const handleTemplateChange = (templateId: string) => {
@@ -291,10 +321,14 @@ function CVPreviewContent() {
               </Link>
               <Button
                 onClick={handleDownloadPDF}
-                disabled={!templateProps}
+                disabled={!templateProps || isDownloading}
                 size="sm"
               >
-                <Download className="h-4 w-4" />
+                {isDownloading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4" />
+                )}
               </Button>
             </div>
 
@@ -346,17 +380,16 @@ function CVPreviewContent() {
                   </Button>
                 </Link>
 
-                <Button variant="outline" onClick={handlePrint}>
-                  <Printer className="mr-2 h-4 w-4" />
-                  Print
-                </Button>
-
                 <Button
                   onClick={handleDownloadPDF}
-                  disabled={!templateProps}
+                  disabled={!templateProps || isDownloading}
                 >
-                  <Download className="mr-2 h-4 w-4" />
-                  Download PDF
+                  {isDownloading ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Download className="mr-2 h-4 w-4" />
+                  )}
+                  {isDownloading ? "Generating..." : "Download PDF"}
                 </Button>
               </div>
             </div>
@@ -415,13 +448,17 @@ function CVPreviewContent() {
               </Link>
 
               <Button
-                variant="outline"
                 size="sm"
-                onClick={handlePrint}
+                onClick={handleDownloadPDF}
+                disabled={!templateProps || isDownloading}
                 className="flex-1"
               >
-                <Printer className="mr-2 h-4 w-4" />
-                Print
+                {isDownloading ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Download className="mr-2 h-4 w-4" />
+                )}
+                {isDownloading ? "Generating..." : "Download"}
               </Button>
             </div>
           </div>

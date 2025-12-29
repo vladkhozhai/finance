@@ -1,6 +1,7 @@
 /**
  * Modern PDF Template
- * Clean two-column layout with blue accents
+ * Clean two-column layout with light gray sidebar and blue accents
+ * Matches the ModernTemplate web component design
  */
 
 import {
@@ -20,23 +21,34 @@ import {
   getPlatformName,
 } from "./utils";
 
-// Define styles
+// Colors matching the web template
+const colors = {
+  white: "#ffffff",
+  gray50: "#f9fafb", // bg-gray-50 - sidebar background
+  gray600: "#4b5563", // text-gray-600
+  gray700: "#374151", // text-gray-700
+  gray800: "#1f2937", // text-gray-800
+  gray900: "#111827", // text-gray-900
+  blue600: "#2563eb", // text-blue-600 - accent color
+  blue100: "#dbeafe", // bg-blue-100
+  blue700: "#1d4ed8", // text-blue-700
+};
+
 const styles = StyleSheet.create({
   page: {
     flexDirection: "row",
     fontFamily: "Helvetica",
     fontSize: 10,
+    backgroundColor: colors.white,
   },
-  // Sidebar styles
+  // Sidebar - 30%
   sidebar: {
     width: "30%",
-    backgroundColor: "#1e3a5f",
-    color: "#ffffff",
-    padding: 20,
+    backgroundColor: colors.gray50,
+    padding: 25,
   },
   photoContainer: {
-    alignItems: "center",
-    marginBottom: 20,
+    marginBottom: 15,
   },
   photo: {
     width: 80,
@@ -44,133 +56,126 @@ const styles = StyleSheet.create({
     borderRadius: 40,
     objectFit: "cover",
   },
-  photoPlaceholder: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: "#2d4a6f",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  photoInitials: {
-    fontSize: 24,
-    color: "#ffffff",
-    fontWeight: "bold",
-  },
   sidebarSection: {
-    marginBottom: 15,
+    marginBottom: 18,
   },
   sidebarTitle: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: "bold",
-    marginBottom: 8,
     textTransform: "uppercase",
     letterSpacing: 1,
-    color: "#7db3e8",
+    color: colors.blue600,
+    marginBottom: 10,
   },
   contactItem: {
     flexDirection: "row",
-    marginBottom: 5,
+    marginBottom: 6,
     fontSize: 9,
   },
-  contactLabel: {
-    color: "#7db3e8",
-    marginRight: 5,
+  contactText: {
+    color: colors.gray700,
   },
-  contactValue: {
-    color: "#ffffff",
-    flex: 1,
+  skillCategory: {
+    marginBottom: 8,
+  },
+  skillCategoryTitle: {
+    fontSize: 8,
+    fontWeight: "bold",
+    color: colors.gray600,
+    marginBottom: 4,
   },
   skillItem: {
-    marginBottom: 6,
+    marginBottom: 4,
   },
   skillName: {
     fontSize: 9,
-    marginBottom: 2,
+    fontWeight: "bold",
+    color: colors.gray800,
   },
-  skillBar: {
-    height: 4,
-    backgroundColor: "#2d4a6f",
-    borderRadius: 2,
-  },
-  skillBarFill: {
-    height: 4,
-    backgroundColor: "#7db3e8",
-    borderRadius: 2,
+  skillLevel: {
+    fontSize: 8,
+    color: colors.gray600,
   },
   languageItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
     marginBottom: 4,
-    fontSize: 9,
   },
-  // Main content styles
+  languageName: {
+    fontSize: 9,
+    fontWeight: "bold",
+    color: colors.gray800,
+  },
+  languageLevel: {
+    fontSize: 8,
+    color: colors.gray600,
+  },
+  // Main content - 70%
   main: {
     width: "70%",
     padding: 25,
-    backgroundColor: "#ffffff",
+    backgroundColor: colors.white,
   },
   header: {
     marginBottom: 20,
-    borderBottomWidth: 2,
-    borderBottomColor: "#1e3a5f",
     paddingBottom: 15,
+    borderBottomWidth: 2,
+    borderBottomColor: colors.blue600,
   },
   name: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: "bold",
-    color: "#1e3a5f",
+    color: colors.gray900,
     marginBottom: 4,
   },
   title: {
     fontSize: 14,
-    color: "#4a6fa5",
-    marginBottom: 8,
-  },
-  summary: {
-    fontSize: 10,
-    color: "#555555",
-    lineHeight: 1.5,
+    fontWeight: "bold",
+    color: colors.blue600,
   },
   section: {
-    marginBottom: 15,
+    marginBottom: 18,
   },
   sectionTitle: {
     fontSize: 12,
     fontWeight: "bold",
-    color: "#1e3a5f",
-    marginBottom: 10,
     textTransform: "uppercase",
     letterSpacing: 0.5,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
-    paddingBottom: 4,
+    color: colors.gray900,
+    marginBottom: 10,
+  },
+  summary: {
+    fontSize: 9,
+    lineHeight: 1.5,
+    color: colors.gray700,
   },
   experienceItem: {
     marginBottom: 12,
   },
-  experienceHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 3,
-  },
   jobTitle: {
     fontSize: 11,
     fontWeight: "bold",
-    color: "#333333",
+    color: colors.gray900,
+  },
+  companyRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 2,
+    fontSize: 9,
+    color: colors.gray700,
+  },
+  companyName: {
+    fontWeight: "bold",
+  },
+  dot: {
+    marginHorizontal: 4,
   },
   dateRange: {
-    fontSize: 9,
-    color: "#666666",
-  },
-  company: {
-    fontSize: 10,
-    color: "#4a6fa5",
-    marginBottom: 3,
+    fontSize: 8,
+    color: colors.gray600,
+    marginBottom: 4,
   },
   description: {
     fontSize: 9,
-    color: "#555555",
+    color: colors.gray700,
     lineHeight: 1.4,
     marginBottom: 4,
   },
@@ -179,7 +184,7 @@ const styles = StyleSheet.create({
   },
   achievement: {
     fontSize: 9,
-    color: "#555555",
+    color: colors.gray700,
     marginBottom: 2,
   },
   educationItem: {
@@ -188,58 +193,64 @@ const styles = StyleSheet.create({
   degree: {
     fontSize: 11,
     fontWeight: "bold",
-    color: "#333333",
+    color: colors.gray900,
   },
   institution: {
-    fontSize: 10,
-    color: "#4a6fa5",
+    fontSize: 9,
+    color: colors.gray700,
   },
   projectItem: {
     marginBottom: 10,
   },
+  projectHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
   projectName: {
     fontSize: 11,
     fontWeight: "bold",
-    color: "#333333",
+    color: colors.gray900,
   },
   projectRole: {
     fontSize: 9,
-    color: "#4a6fa5",
-    marginBottom: 2,
+    color: colors.gray600,
+    marginLeft: 6,
   },
   technologies: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 4,
+    marginTop: 4,
+  },
+  techBadge: {
     fontSize: 8,
-    color: "#666666",
-    fontStyle: "italic",
+    color: colors.blue700,
+    backgroundColor: colors.blue100,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 2,
   },
   certItem: {
     marginBottom: 8,
   },
   certName: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: "bold",
-    color: "#333333",
+    color: colors.gray900,
   },
   certOrg: {
     fontSize: 9,
-    color: "#666666",
+    color: colors.gray700,
+  },
+  certDate: {
+    fontSize: 8,
+    color: colors.gray600,
   },
   link: {
-    color: "#4a6fa5",
+    color: colors.blue600,
     textDecoration: "none",
   },
 });
-
-// Helper to get skill level as percentage
-function getSkillLevel(level?: string | null): number {
-  const levels: Record<string, number> = {
-    beginner: 25,
-    intermediate: 50,
-    advanced: 75,
-    expert: 100,
-  };
-  return levels[level?.toLowerCase() || "intermediate"] || 50;
-}
 
 export function ModernPDF({
   profile,
@@ -265,40 +276,46 @@ export function ModernPDF({
 
   const fullName = getFullName(profile);
   const location = getLocation(profile.address_city, profile.address_country);
-  const initials = `${profile.first_name[0] || ""}${profile.last_name[0] || ""}`;
+
+  // Group skills by category
+  const skillsByCategory = skills.reduce(
+    (acc, skill) => {
+      const category = skill.category || "Other";
+      if (!acc[category]) acc[category] = [];
+      acc[category].push(skill);
+      return acc;
+    },
+    {} as Record<string, typeof skills>,
+  );
 
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        {/* Sidebar */}
+        {/* Sidebar - 30% */}
         <View style={styles.sidebar}>
-          {/* Photo */}
-          <View style={styles.photoContainer}>
-            {profile.profile_photo_url ? (
+          {/* Profile Photo */}
+          {profile.profile_photo_url && (
+            <View style={styles.photoContainer}>
               <Image src={profile.profile_photo_url} style={styles.photo} />
-            ) : (
-              <View style={styles.photoPlaceholder}>
-                <Text style={styles.photoInitials}>{initials}</Text>
-              </View>
-            )}
-          </View>
+            </View>
+          )}
 
           {/* Contact Information */}
           <View style={styles.sidebarSection}>
             <Text style={styles.sidebarTitle}>Contact</Text>
             {profile.email && (
               <View style={styles.contactItem}>
-                <Text style={styles.contactValue}>{profile.email}</Text>
+                <Text style={styles.contactText}>{profile.email}</Text>
               </View>
             )}
             {profile.phone && (
               <View style={styles.contactItem}>
-                <Text style={styles.contactValue}>{profile.phone}</Text>
+                <Text style={styles.contactText}>{profile.phone}</Text>
               </View>
             )}
             {location && (
               <View style={styles.contactItem}>
-                <Text style={styles.contactValue}>{location}</Text>
+                <Text style={styles.contactText}>{location}</Text>
               </View>
             )}
           </View>
@@ -309,14 +326,8 @@ export function ModernPDF({
               <Text style={styles.sidebarTitle}>Links</Text>
               {socialLinks.map((link, index) => (
                 <View key={index} style={styles.contactItem}>
-                  <Text style={styles.contactLabel}>
-                    {getPlatformName(link.platform)}:
-                  </Text>
-                  <Link
-                    src={link.url}
-                    style={[styles.contactValue, styles.link]}
-                  >
-                    {link.url.replace(/^https?:\/\/(www\.)?/, "").split("/")[0]}
+                  <Link src={link.url} style={styles.link}>
+                    {getPlatformName(link.platform)}
                   </Link>
                 </View>
               ))}
@@ -327,19 +338,25 @@ export function ModernPDF({
           {skills.length > 0 && (
             <View style={styles.sidebarSection}>
               <Text style={styles.sidebarTitle}>Skills</Text>
-              {skills.slice(0, 8).map((skill, index) => (
-                <View key={index} style={styles.skillItem}>
-                  <Text style={styles.skillName}>{skill.skill_name}</Text>
-                  <View style={styles.skillBar}>
-                    <View
-                      style={[
-                        styles.skillBarFill,
-                        { width: `${getSkillLevel(skill.proficiency_level)}%` },
-                      ]}
-                    />
+              {Object.entries(skillsByCategory).map(
+                ([category, categorySkills], catIndex) => (
+                  <View key={catIndex} style={styles.skillCategory}>
+                    {Object.keys(skillsByCategory).length > 1 && (
+                      <Text style={styles.skillCategoryTitle}>{category}</Text>
+                    )}
+                    {categorySkills.map((skill, index) => (
+                      <View key={index} style={styles.skillItem}>
+                        <Text style={styles.skillName}>{skill.skill_name}</Text>
+                        {skill.proficiency_level && (
+                          <Text style={styles.skillLevel}>
+                            {skill.proficiency_level}
+                          </Text>
+                        )}
+                      </View>
+                    ))}
                   </View>
-                </View>
-              ))}
+                ),
+              )}
             </View>
           )}
 
@@ -349,15 +366,15 @@ export function ModernPDF({
               <Text style={styles.sidebarTitle}>Languages</Text>
               {languages.map((lang, index) => (
                 <View key={index} style={styles.languageItem}>
-                  <Text>{lang.language_name}</Text>
-                  <Text style={{ color: "#7db3e8" }}>{lang.proficiency}</Text>
+                  <Text style={styles.languageName}>{lang.language_name}</Text>
+                  <Text style={styles.languageLevel}>{lang.proficiency}</Text>
                 </View>
               ))}
             </View>
           )}
         </View>
 
-        {/* Main Content */}
+        {/* Main Content - 70% */}
         <View style={styles.main}>
           {/* Header */}
           <View style={styles.header}>
@@ -365,31 +382,47 @@ export function ModernPDF({
             {profile.professional_title && (
               <Text style={styles.title}>{profile.professional_title}</Text>
             )}
-            {profile.professional_summary && (
-              <Text style={styles.summary}>{profile.professional_summary}</Text>
-            )}
           </View>
+
+          {/* Professional Summary */}
+          {profile.professional_summary && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Professional Summary</Text>
+              <Text style={styles.summary}>{profile.professional_summary}</Text>
+            </View>
+          )}
 
           {/* Work Experience */}
           {workExperiences.length > 0 && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Experience</Text>
+              <Text style={styles.sectionTitle}>Work Experience</Text>
               {workExperiences.map((exp, index) => (
                 <View key={index} style={styles.experienceItem}>
-                  <View style={styles.experienceHeader}>
-                    <Text style={styles.jobTitle}>{exp.job_title}</Text>
-                    <Text style={styles.dateRange}>
-                      {formatDateRange(
-                        exp.start_date,
-                        exp.end_date,
-                        exp.is_current,
-                      )}
-                    </Text>
+                  <Text style={styles.jobTitle}>{exp.job_title}</Text>
+                  <View style={styles.companyRow}>
+                    <Text style={styles.companyName}>{exp.company_name}</Text>
+                    {exp.location && (
+                      <>
+                        <Text style={styles.dot}>•</Text>
+                        <Text>
+                          {exp.location}
+                          {exp.is_remote && " (Remote)"}
+                        </Text>
+                      </>
+                    )}
+                    {exp.employment_type && (
+                      <>
+                        <Text style={styles.dot}>•</Text>
+                        <Text>{exp.employment_type}</Text>
+                      </>
+                    )}
                   </View>
-                  <Text style={styles.company}>
-                    {exp.company_name}
-                    {exp.location && ` - ${exp.location}`}
-                    {exp.is_remote && " (Remote)"}
+                  <Text style={styles.dateRange}>
+                    {formatDateRange(
+                      exp.start_date,
+                      exp.end_date,
+                      exp.is_current,
+                    )}
                   </Text>
                   {exp.description && (
                     <Text style={styles.description}>{exp.description}</Text>
@@ -414,21 +447,17 @@ export function ModernPDF({
               <Text style={styles.sectionTitle}>Education</Text>
               {education.map((edu, index) => (
                 <View key={index} style={styles.educationItem}>
-                  <View style={styles.experienceHeader}>
-                    <Text style={styles.degree}>
-                      {edu.degree} in {edu.field_of_study}
-                    </Text>
-                    <Text style={styles.dateRange}>
-                      {formatDateRange(
-                        edu.start_date,
-                        edu.end_date,
-                        edu.is_current,
-                      )}
-                    </Text>
-                  </View>
-                  <Text style={styles.institution}>
-                    {edu.institution_name}
-                    {edu.gpa && ` - GPA: ${edu.gpa}`}
+                  <Text style={styles.degree}>
+                    {edu.degree} in {edu.field_of_study}
+                  </Text>
+                  <Text style={styles.institution}>{edu.institution_name}</Text>
+                  <Text style={styles.dateRange}>
+                    {formatDateRange(
+                      edu.start_date,
+                      edu.end_date,
+                      edu.is_current,
+                    )}
+                    {edu.gpa && ` • GPA: ${edu.gpa}`}
                   </Text>
                   {edu.description && (
                     <Text style={styles.description}>{edu.description}</Text>
@@ -444,17 +473,32 @@ export function ModernPDF({
               <Text style={styles.sectionTitle}>Projects</Text>
               {projects.slice(0, 4).map((proj, index) => (
                 <View key={index} style={styles.projectItem}>
-                  <Text style={styles.projectName}>{proj.project_name}</Text>
-                  {proj.role && (
-                    <Text style={styles.projectRole}>{proj.role}</Text>
+                  <View style={styles.projectHeader}>
+                    <Text style={styles.projectName}>{proj.project_name}</Text>
+                    {proj.role && (
+                      <Text style={styles.projectRole}>({proj.role})</Text>
+                    )}
+                  </View>
+                  {proj.start_date && (
+                    <Text style={styles.dateRange}>
+                      {formatDateRange(
+                        proj.start_date,
+                        proj.end_date,
+                        proj.is_ongoing,
+                      )}
+                    </Text>
                   )}
                   {proj.description && (
                     <Text style={styles.description}>{proj.description}</Text>
                   )}
                   {proj.technologies && proj.technologies.length > 0 && (
-                    <Text style={styles.technologies}>
-                      Technologies: {proj.technologies.join(", ")}
-                    </Text>
+                    <View style={styles.technologies}>
+                      {proj.technologies.map((tech, idx) => (
+                        <Text key={idx} style={styles.techBadge}>
+                          {tech}
+                        </Text>
+                      ))}
+                    </View>
                   )}
                 </View>
               ))}
@@ -469,8 +513,12 @@ export function ModernPDF({
                 <View key={index} style={styles.certItem}>
                   <Text style={styles.certName}>{cert.certification_name}</Text>
                   <Text style={styles.certOrg}>
-                    {cert.issuing_organization} -{" "}
-                    {formatDateRange(cert.issue_date, null)}
+                    {cert.issuing_organization}
+                  </Text>
+                  <Text style={styles.certDate}>
+                    Issued: {formatDateRange(cert.issue_date, null)}
+                    {cert.expiration_date &&
+                      ` • Expires: ${formatDateRange(cert.expiration_date, null)}`}
                   </Text>
                 </View>
               ))}

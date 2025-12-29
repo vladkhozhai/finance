@@ -74,7 +74,7 @@ function CVPreviewContent() {
     templateParam,
   );
   const [isLoading, setIsLoading] = useState(true);
-  const [isDownloading, setIsDownloading] = useState(false);
+  // isDownloading state removed - now using browser print dialog
   const [error, setError] = useState<string | null>(null);
   const [scale, setScale] = useState(0.7);
   const [isMobile, setIsMobile] = useState(false);
@@ -127,50 +127,10 @@ function CVPreviewContent() {
     window.print();
   };
 
-  const handleDownloadPDF = async () => {
-    if (!currentTemplate) return;
-
-    setIsDownloading(true);
-    setError(null);
-
-    try {
-      // Get template slug from template
-      const templateSlug = currentTemplate.template_slug;
-
-      // Fetch PDF from API
-      const response = await fetch(`/api/cv/pdf?template=${templateSlug}`);
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to generate PDF");
-      }
-
-      // Get filename from Content-Disposition header or use default
-      const contentDisposition = response.headers.get("Content-Disposition");
-      let filename = "CV.pdf";
-      if (contentDisposition) {
-        const matches = contentDisposition.match(/filename="(.+)"/);
-        if (matches?.[1]) {
-          filename = matches[1];
-        }
-      }
-
-      // Create blob and download
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error("Download error:", err);
-      setError(err instanceof Error ? err.message : "Failed to download PDF");
-    } finally {
-      setIsDownloading(false);
-    }
+  const handleDownloadPDF = () => {
+    // Use browser print dialog to save as PDF
+    // This ensures the PDF matches exactly what's shown in the preview
+    window.print();
   };
 
   const handleTemplateChange = (templateId: string) => {
@@ -331,14 +291,10 @@ function CVPreviewContent() {
               </Link>
               <Button
                 onClick={handleDownloadPDF}
-                disabled={isDownloading || !templateProps}
+                disabled={!templateProps}
                 size="sm"
               >
-                {isDownloading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Download className="h-4 w-4" />
-                )}
+                <Download className="h-4 w-4" />
               </Button>
             </div>
 
@@ -397,14 +353,10 @@ function CVPreviewContent() {
 
                 <Button
                   onClick={handleDownloadPDF}
-                  disabled={isDownloading || !templateProps}
+                  disabled={!templateProps}
                 >
-                  {isDownloading ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Download className="mr-2 h-4 w-4" />
-                  )}
-                  {isDownloading ? "Generating..." : "Download PDF"}
+                  <Download className="mr-2 h-4 w-4" />
+                  Download PDF
                 </Button>
               </div>
             </div>

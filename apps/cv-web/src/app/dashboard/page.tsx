@@ -1,5 +1,6 @@
 import { FileText, Plus, Download, Eye, ArrowRight, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -11,14 +12,9 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { createClient } from "@/lib/supabase/server";
+import { SignOutButton } from "@/components/sign-out-button";
 
 export const dynamic = "force-dynamic";
-
-async function handleSignOut() {
-  "use server";
-  const { signOut } = await import("@/actions/auth");
-  await signOut();
-}
 
 // Calculate profile completeness
 async function getProfileCompleteness() {
@@ -75,6 +71,11 @@ export default async function DashboardPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
+  // Redirect to sign-in if not authenticated
+  if (!user) {
+    redirect("/sign-in?next=/dashboard");
+  }
+
   const firstName = user?.user_metadata?.first_name || "there";
   const profileData = await getProfileCompleteness();
 
@@ -100,11 +101,7 @@ export default async function DashboardPage() {
             <FileText className="h-6 w-6 text-primary" />
             <span className="font-bold text-xl">CVFlow</span>
           </div>
-          <form action={handleSignOut}>
-            <Button variant="outline" type="submit">
-              Sign out
-            </Button>
-          </form>
+          <SignOutButton />
         </div>
       </header>
 

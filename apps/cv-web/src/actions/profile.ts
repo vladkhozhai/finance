@@ -58,12 +58,54 @@ export async function getProfile(): Promise<
       .single();
 
     if (profileError) {
+      // Check if profile doesn't exist (PGRST116 is "no rows returned")
+      if (profileError.code === "PGRST116") {
+        console.log("Profile not found for user, returning empty profile");
+        // Return empty profile structure instead of error
+        return {
+          success: true,
+          data: {
+            id: user.id,
+            first_name: null,
+            last_name: null,
+            middle_name: null,
+            professional_title: null,
+            phone: null,
+            address_street: null,
+            address_city: null,
+            address_state: null,
+            address_country: null,
+            address_postal_code: null,
+            professional_summary: null,
+            profile_photo_url: null,
+          },
+        };
+      }
       console.error("Profile fetch error:", profileError);
       return { success: false, error: "Failed to fetch profile" };
     }
 
     if (!profile) {
-      return { success: false, error: "Profile not found" };
+      console.log("Profile is null, returning empty profile");
+      // Return empty profile structure
+      return {
+        success: true,
+        data: {
+          id: user.id,
+          first_name: null,
+          last_name: null,
+          middle_name: null,
+          professional_title: null,
+          phone: null,
+          address_street: null,
+          address_city: null,
+          address_state: null,
+          address_country: null,
+          address_postal_code: null,
+          professional_summary: null,
+          profile_photo_url: null,
+        },
+      };
     }
 
     return { success: true, data: profile };
@@ -101,17 +143,20 @@ export async function updateProfile(
       return { success: false, error: "Unauthorized" };
     }
 
-    // Update profile
-    const { error: updateError } = await supabase
+    // Upsert profile (insert or update)
+    // This handles the case where a profile doesn't exist yet
+    const { error: upsertError } = await supabase
       .from("cv_profiles")
-      .update({
+      .upsert({
+        id: user.id,
         ...validated.data,
         updated_at: new Date().toISOString(),
-      })
-      .eq("id", user.id);
+      }, {
+        onConflict: "id",
+      });
 
-    if (updateError) {
-      console.error("Profile update error:", updateError);
+    if (upsertError) {
+      console.error("Profile upsert error:", upsertError);
       return { success: false, error: "Failed to update profile" };
     }
 

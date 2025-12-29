@@ -68,9 +68,13 @@ export async function signIn(data: SignInInput) {
     };
   }
 
-  // Revalidate and redirect on success
+  // Revalidate cache on success
   revalidatePath("/", "layout");
-  redirect("/dashboard");
+
+  // Return success - let the client handle the redirect
+  return {
+    success: true as const,
+  };
 }
 
 /**
@@ -140,7 +144,12 @@ export async function signOut() {
   }
 
   revalidatePath("/", "layout");
-  redirect("/sign-in");
+
+  // Return success - let the client handle the redirect
+  // This prevents timeout issues with server-side redirect
+  return {
+    success: true as const,
+  };
 }
 
 /**

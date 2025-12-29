@@ -60,7 +60,42 @@ export async function updateSession(request: NextRequest) {
   // supabase.auth.getUser(). A simple mistake could make it very hard to debug
   // issues with users being randomly logged out.
 
-  // Refresh the session if needed
+  // Check if there's an auth token present to avoid slow auth check
+  const hasAuthCookie = request.cookies.has('sb-127-0-0-1-54321-auth-token') ||
+                        request.cookies.getAll().some(cookie =>
+                          cookie.name.includes('auth-token')
+                        );
+
+  // If no auth cookies, skip the slow getUser() call for public routes
+  const pathname = request.nextUrl.pathname;
+  const publicRoutes = [
+    "/sign-in",
+    "/sign-up",
+    "/forgot-password",
+    "/reset-password",
+    "/auth/callback",
+    "/auth/error",
+  ];
+  const isPublicRoute = publicRoutes.some((route) =>
+    pathname.startsWith(route),
+  );
+
+  // Fast path: no auth cookie and trying to access protected route
+  if (!hasAuthCookie && !isPublicRoute && pathname !== "/") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/sign-in";
+    url.searchParams.set("next", pathname);
+    return NextResponse.redirect(url);
+  }
+
+  // Fast path: no auth cookie and on root
+  if (!hasAuthCookie && pathname === "/") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/sign-in";
+    return NextResponse.redirect(url);
+  }
+
+  // Refresh the session if needed (only if we have auth cookies)
   const {
     data: { user },
     error,
@@ -70,26 +105,12 @@ export async function updateSession(request: NextRequest) {
     console.error("Error getting user in middleware:", error.message);
   }
 
-  const pathname = request.nextUrl.pathname;
-
-  // Public routes that don't require authentication
-  const publicRoutes = [
-    "/sign-in",
-    "/sign-up",
-    "/forgot-password",
-    "/reset-password",
-    "/auth/callback",
-    "/auth/error",
-  ];
-
-  const isPublicRoute = publicRoutes.some((route) =>
-    pathname.startsWith(route),
-  );
-
   // If user is not authenticated and trying to access protected route
   if (!user && !isPublicRoute && pathname !== "/") {
     const url = request.nextUrl.clone();
     url.pathname = "/sign-in";
+    // Preserve the original URL as a 'next' parameter for post-login redirect
+    url.searchParams.set("next", pathname);
     return NextResponse.redirect(url);
   }
 

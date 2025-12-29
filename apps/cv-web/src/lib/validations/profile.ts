@@ -27,13 +27,10 @@ export type SocialLinkInput = z.infer<typeof socialLinkSchema>;
 export const workExperienceSchema = z.object({
   company_name: z.string().min(1, "Company name is required"),
   job_title: z.string().min(1, "Job title is required"),
-  employment_type: z.enum([
-    "full-time",
-    "part-time",
-    "contract",
-    "freelance",
-    "internship",
-  ]).optional().nullable(),
+  employment_type: z
+    .enum(["full-time", "part-time", "contract", "freelance", "internship"])
+    .optional()
+    .nullable(),
   location: z.string().optional().nullable(),
   is_remote: z.boolean().default(false),
   start_date: z.string().min(1, "Start date is required"),
@@ -98,12 +95,10 @@ export const SKILL_CATEGORIES = [
 
 export const skillSchema = z.object({
   skill_name: z.string().min(1, "Skill name is required"),
-  proficiency_level: z.enum([
-    "beginner",
-    "intermediate",
-    "advanced",
-    "expert",
-  ]).optional().nullable(),
+  proficiency_level: z
+    .enum(["beginner", "intermediate", "advanced", "expert"])
+    .optional()
+    .nullable(),
   category: z.string().optional().nullable(),
 });
 
@@ -118,7 +113,12 @@ export const projectSchema = z.object({
   is_ongoing: z.boolean().optional(),
   description: z.string().optional().nullable(),
   technologies: z.array(z.string()).optional(),
-  project_url: z.string().url("Please enter a valid URL").optional().nullable().or(z.literal("")),
+  project_url: z
+    .string()
+    .url("Please enter a valid URL")
+    .optional()
+    .nullable()
+    .or(z.literal("")),
 });
 
 export type ProjectInput = z.infer<typeof projectSchema>;
@@ -130,33 +130,54 @@ export const certificationSchema = z.object({
   issue_date: z.string().min(1, "Issue date is required"),
   expiration_date: z.string().optional().nullable(),
   credential_id: z.string().optional().nullable(),
-  credential_url: z.string().url("Please enter a valid URL").optional().nullable().or(z.literal("")),
+  credential_url: z
+    .string()
+    .url("Please enter a valid URL")
+    .optional()
+    .nullable()
+    .or(z.literal("")),
 });
 
 export type CertificationInput = z.infer<typeof certificationSchema>;
 
 // Language Schema - CEFR Aligned
 export const LANGUAGE_PROFICIENCIES = [
-  { value: "A1", label: "Beginner (A1)", description: "Basic phrases, simple interactions" },
-  { value: "A2", label: "Elementary (A2)", description: "Routine tasks, simple terms" },
-  { value: "B1", label: "Pre-Intermediate (B1)", description: "Main points, standard dialect" },
-  { value: "B2", label: "Intermediate (B2)", description: "Complex text, technical discussions" },
-  { value: "C1", label: "Upper-Intermediate (C1)", description: "Demanding texts, implicit meaning" },
-  { value: "C2", label: "Advanced/Fluent (C2)", description: "Near-native, nuanced expression" },
+  {
+    value: "A1",
+    label: "A1 (Beginner)",
+    description: "Basic phrases, simple interactions",
+  },
+  {
+    value: "A2",
+    label: "A2 (Elementary)",
+    description: "Routine tasks, simple terms",
+  },
+  {
+    value: "B1",
+    label: "B1 (Intermediate)",
+    description: "Main points, standard dialect",
+  },
+  {
+    value: "B2",
+    label: "B2 (Upper-Intermediate)",
+    description: "Complex text, technical discussions",
+  },
+  {
+    value: "C1",
+    label: "C1 (Advanced)",
+    description: "Demanding texts, implicit meaning",
+  },
+  {
+    value: "C2",
+    label: "C2 (Proficiency)",
+    description: "Near-native, nuanced expression",
+  },
   { value: "Native", label: "Native", description: "Native speaker" },
 ] as const;
 
 export const languageSchema = z.object({
   language_name: z.string().min(1, "Language is required"),
-  proficiency: z.enum([
-    "A1",
-    "A2",
-    "B1",
-    "B2",
-    "C1",
-    "C2",
-    "Native",
-  ]),
+  proficiency: z.enum(["A1", "A2", "B1", "B2", "C1", "C2", "Native"]),
 });
 
 export type LanguageInput = z.infer<typeof languageSchema>;

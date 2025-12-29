@@ -72,7 +72,7 @@ function CVPreviewContent() {
   const [cvData, setCvData] = useState<CVData | null>(null);
   const [templates, setTemplates] = useState<CVTemplate[]>([]);
   const [currentTemplateId, setCurrentTemplateId] = useState<string | null>(
-    templateParam
+    templateParam,
   );
   const [isLoading, setIsLoading] = useState(true);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -122,8 +122,8 @@ function CVPreviewContent() {
     setError(null);
 
     try {
-      // Get template slug from name
-      const templateSlug = currentTemplate.template_name.toLowerCase();
+      // Get template slug from template
+      const templateSlug = currentTemplate.template_slug;
 
       // Fetch PDF from API
       const response = await fetch(`/api/cv/pdf?template=${templateSlug}`);
@@ -170,8 +170,7 @@ function CVPreviewContent() {
     const currentIndex = templates.findIndex((t) => t.id === currentTemplateId);
     if (currentIndex === -1) return;
 
-    let newIndex =
-      direction === "prev" ? currentIndex - 1 : currentIndex + 1;
+    let newIndex = direction === "prev" ? currentIndex - 1 : currentIndex + 1;
 
     // Wrap around
     if (newIndex < 0) newIndex = templates.length - 1;
@@ -182,7 +181,7 @@ function CVPreviewContent() {
 
   // Get current template component
   const currentTemplate = templates.find((t) => t.id === currentTemplateId);
-  const templateSlug = currentTemplate?.template_name.toLowerCase() || "modern";
+  const templateSlug = currentTemplate?.template_slug || "modern";
   const TemplateComponent = TEMPLATE_COMPONENTS[templateSlug] || ModernTemplate;
 
   // Transform CVData to CVTemplateProps
@@ -284,7 +283,9 @@ function CVPreviewContent() {
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
             <h2 className="text-lg font-semibold mb-2">Loading your CV</h2>
-            <p className="text-muted-foreground">Preparing your professional resume...</p>
+            <p className="text-muted-foreground">
+              Preparing your professional resume...
+            </p>
           </div>
         </main>
       </div>
@@ -357,7 +358,10 @@ function CVPreviewContent() {
                 Print
               </Button>
 
-              <Button onClick={handleDownloadPDF} disabled={isDownloading || !templateProps}>
+              <Button
+                onClick={handleDownloadPDF}
+                disabled={isDownloading || !templateProps}
+              >
                 {isDownloading ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
@@ -380,7 +384,9 @@ function CVPreviewContent() {
             </Link>
 
             <div className="flex items-center gap-3 bg-white dark:bg-zinc-950 px-4 py-2 rounded-lg border">
-              <span className="text-sm font-medium text-muted-foreground">Zoom</span>
+              <span className="text-sm font-medium text-muted-foreground">
+                Zoom
+              </span>
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"

@@ -98,8 +98,8 @@ export async function createCertification(
       return { success: false, error: "Unauthorized" };
     }
 
-    // Validate business rules
-    if (validated.data.expiration_date) {
+    // Validate business rules (only if expiration date is provided and not empty)
+    if (validated.data.expiration_date && validated.data.expiration_date !== "") {
       const issueDate = new Date(validated.data.issue_date);
       const expirationDate = new Date(validated.data.expiration_date);
 
@@ -125,12 +125,25 @@ export async function createCertification(
     }
 
     const nextOrder =
-      existingCertifications && existingCertifications.length > 0 && existingCertifications[0].display_order !== null
+      existingCertifications &&
+      existingCertifications.length > 0 &&
+      existingCertifications[0].display_order !== null
         ? existingCertifications[0].display_order + 1
         : 0;
 
-    // Normalize empty strings to null for URLs
-    const credentialUrl = validated.data.credential_url === "" ? null : validated.data.credential_url;
+    // Normalize empty strings to null for optional fields
+    const credentialUrl =
+      validated.data.credential_url === ""
+        ? null
+        : validated.data.credential_url;
+    const expirationDate =
+      validated.data.expiration_date === ""
+        ? null
+        : validated.data.expiration_date;
+    const credentialId =
+      validated.data.credential_id === ""
+        ? null
+        : validated.data.credential_id;
 
     // Create certification
     const { data: certification, error: insertError } = await supabase
@@ -140,8 +153,8 @@ export async function createCertification(
         certification_name: validated.data.certification_name,
         issuing_organization: validated.data.issuing_organization,
         issue_date: validated.data.issue_date,
-        expiration_date: validated.data.expiration_date,
-        credential_id: validated.data.credential_id,
+        expiration_date: expirationDate,
+        credential_id: credentialId,
         credential_url: credentialUrl,
         display_order: nextOrder,
       })
@@ -199,8 +212,8 @@ export async function updateCertification(
       return { success: false, error: "Unauthorized" };
     }
 
-    // Validate business rules
-    if (validated.data.expiration_date) {
+    // Validate business rules (only if expiration date is provided and not empty)
+    if (validated.data.expiration_date && validated.data.expiration_date !== "") {
       const issueDate = new Date(validated.data.issue_date);
       const expirationDate = new Date(validated.data.expiration_date);
 
@@ -212,8 +225,19 @@ export async function updateCertification(
       }
     }
 
-    // Normalize empty strings to null for URLs
-    const credentialUrl = validated.data.credential_url === "" ? null : validated.data.credential_url;
+    // Normalize empty strings to null for optional fields
+    const credentialUrl =
+      validated.data.credential_url === ""
+        ? null
+        : validated.data.credential_url;
+    const expirationDate =
+      validated.data.expiration_date === ""
+        ? null
+        : validated.data.expiration_date;
+    const credentialId =
+      validated.data.credential_id === ""
+        ? null
+        : validated.data.credential_id;
 
     // Update certification (RLS ensures user can only update their own certifications)
     const { error: updateError } = await supabase
@@ -222,8 +246,8 @@ export async function updateCertification(
         certification_name: validated.data.certification_name,
         issuing_organization: validated.data.issuing_organization,
         issue_date: validated.data.issue_date,
-        expiration_date: validated.data.expiration_date,
-        credential_id: validated.data.credential_id,
+        expiration_date: expirationDate,
+        credential_id: credentialId,
         credential_url: credentialUrl,
       })
       .eq("id", id)
@@ -334,8 +358,7 @@ export async function reorderCertifications(
     if (existingCertifications.length !== orderedIds.length) {
       return {
         success: false,
-        error:
-          "Some certifications do not exist or do not belong to you",
+        error: "Some certifications do not exist or do not belong to you",
       };
     }
 

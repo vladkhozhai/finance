@@ -15,6 +15,7 @@ export const dynamic = "force-dynamic";
 
 import { Suspense } from "react";
 import { getPaymentMethodBalancesWithDetails } from "@/app/actions/dashboard";
+import { BudgetOverviewSummary } from "@/components/budgets/budget-overview-summary";
 import {
   TotalBalanceCard,
   TotalBalanceCardSkeleton,
@@ -122,6 +123,15 @@ export default async function DashboardPage() {
     }),
   );
 
+  // Transform budget data for the overview summary component
+  const budgetProgressData = budgetsWithSpent.map((budget) => ({
+    id: budget.id,
+    budget_amount: budget.limit,
+    spent_amount: budget.spent,
+    spent_percentage: (budget.spent / budget.limit) * 100,
+    is_overspent: budget.spent > budget.limit,
+  }));
+
   // Fetch expense breakdown by category
   const { data: expenseTransactions } = (await supabase
     .from("transactions")
@@ -185,6 +195,14 @@ export default async function DashboardPage() {
 
         {/* Payment Methods Section */}
         <DashboardClient paymentMethods={paymentMethods} />
+
+        {/* Budget Overview Summary */}
+        {budgetProgressData.length > 0 && (
+          <BudgetOverviewSummary
+            budgets={budgetProgressData}
+            currency={currency}
+          />
+        )}
 
         {/* Active Budgets */}
         {budgetsWithSpent.length > 0 && (

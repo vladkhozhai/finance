@@ -15,6 +15,7 @@ import {
   BudgetFilters,
   type BudgetFilterValues,
   BudgetList,
+  BudgetOverviewSummary,
   CreateBudgetDialog,
 } from "@/components/budgets";
 import { Card } from "@/components/ui/card";
@@ -186,6 +187,11 @@ export default function BudgetsPage() {
           </div>
         </div>
       </Card>
+
+      {/* Budget Overview Summary */}
+      {!isLoading && sortedBudgets.length > 0 && (
+        <BudgetOverviewSummary budgets={sortedBudgets} currency={currency} />
+      )}
 
       {/* Budget List */}
       <BudgetList

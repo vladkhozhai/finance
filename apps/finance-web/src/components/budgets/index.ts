@@ -7,6 +7,7 @@
 export { BudgetCard } from "./budget-card";
 export { BudgetFilters, type BudgetFilterValues } from "./budget-filters";
 export { BudgetList } from "./budget-list";
+export { BudgetOverviewSummary } from "./budget-overview-summary";
 export { BudgetPaymentBreakdown } from "./budget-payment-breakdown";
 export { BudgetProgressBar } from "./budget-progress-bar";
 export { CreateBudgetDialog } from "./create-budget-dialog";

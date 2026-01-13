@@ -11,6 +11,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { BudgetProgress } from "@/app/actions/budgets";
 import { getBudgetProgress } from "@/app/actions/budgets";
 import { getUserProfile } from "@/app/actions/profile";
+import { getTotalExpensesForPeriod } from "@/app/actions/transactions";
 import {
   BudgetFilters,
   type BudgetFilterValues,
@@ -80,6 +81,9 @@ export default function BudgetsPage() {
   const [filters, setFilters] = useState<BudgetFilterValues>({});
   const [sortBy, setSortBy] = useState<SortOption>("default");
   const [currency, setCurrency] = useState<string>("USD");
+  const [totalExpenses, setTotalExpenses] = useState<number | undefined>(
+    undefined,
+  );
 
   const { error: showError } = useToast();
 
@@ -117,11 +121,28 @@ export default function BudgetsPage() {
     }
   }, []);
 
+  // Fetch total expenses for the current period
+  const fetchTotalExpenses = useCallback(async () => {
+    // Get the period from filters or use current month
+    const now = new Date();
+    const currentPeriod =
+      filters.period ||
+      `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+
+    const result = await getTotalExpensesForPeriod(currentPeriod);
+    if (result.success) {
+      setTotalExpenses(result.data.totalExpenses);
+    } else {
+      setTotalExpenses(undefined);
+    }
+  }, [filters.period]);
+
   // Fetch budgets on mount and when filters change
   useEffect(() => {
     fetchCurrency();
     fetchBudgets();
-  }, [fetchBudgets, fetchCurrency]);
+    fetchTotalExpenses();
+  }, [fetchBudgets, fetchCurrency, fetchTotalExpenses]);
 
   // Handle filter changes
   const handleFiltersChange = (newFilters: BudgetFilterValues) => {
@@ -190,7 +211,11 @@ export default function BudgetsPage() {
 
       {/* Budget Overview Summary */}
       {!isLoading && sortedBudgets.length > 0 && (
-        <BudgetOverviewSummary budgets={sortedBudgets} currency={currency} />
+        <BudgetOverviewSummary
+          budgets={sortedBudgets}
+          currency={currency}
+          totalExpenses={totalExpenses}
+        />
       )}
 
       {/* Budget List */}

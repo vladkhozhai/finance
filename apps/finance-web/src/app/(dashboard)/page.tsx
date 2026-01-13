@@ -15,6 +15,7 @@ export const dynamic = "force-dynamic";
 
 import { Suspense } from "react";
 import { getPaymentMethodBalancesWithDetails } from "@/app/actions/dashboard";
+import { getTotalExpensesForPeriod } from "@/app/actions/transactions";
 import { BudgetOverviewSummary } from "@/components/budgets/budget-overview-summary";
 import {
   TotalBalanceCard,
@@ -174,6 +175,14 @@ export default async function DashboardPage() {
     ? paymentMethodsResult.data
     : [];
 
+  // Fetch total expenses for the current period
+  const now = new Date();
+  const currentPeriod = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const expensesResult = await getTotalExpensesForPeriod(currentPeriod);
+  const totalExpenses = expensesResult.success
+    ? expensesResult.data.totalExpenses
+    : undefined;
+
   return (
     <div className="container mx-auto p-4 md:p-6 lg:p-8">
       {/* Page header */}
@@ -201,6 +210,7 @@ export default async function DashboardPage() {
           <BudgetOverviewSummary
             budgets={budgetProgressData}
             currency={currency}
+            totalExpenses={totalExpenses}
           />
         )}
 

@@ -1009,3 +1009,101 @@ export async function getTotalBalanceInBaseCurrency(): Promise<
     return error("An unexpected error occurred. Please try again.");
   }
 }
+
+/**
+ * Gets total expenses for a given period.
+ * Includes ALL expense transactions regardless of whether they have associated budgets.
+ * Amounts are in the user's base currency (already converted for multi-currency transactions).
+ *
+ * @param period - Period to calculate expenses for (e.g., '2024-01' or '2024-01-01')
+ * @returns ActionResult with total expenses and period details
+ */
+export async function getTotalExpensesForPeriod(period: string): Promise<
+  ActionResult<{
+    totalExpenses: number;
+    period: { start: string; end: string };
+    transactionCount: number;
+  }>
+> {
+  try {
+    // 1. Validate period format (supports YYYY-MM or YYYY-MM-DD)
+    const periodRegex = /^\d{4}-\d{2}(-\d{2})?$/;
+    if (!periodRegex.test(period)) {
+      return error(
+        "Invalid period format. Expected YYYY-MM or YYYY-MM-DD format.",
+      );
+    }
+
+    // 2. Get authenticated user
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return error("Unauthorized. Please log in to view expenses.");
+    }
+
+    // 3. Calculate period start and end dates
+    // Normalize to YYYY-MM-DD format
+    const normalizedPeriod = period.length === 7 ? `${period}-01` : period;
+    const periodDate = new Date(normalizedPeriod);
+
+    // Start of month
+    const periodStart = new Date(
+      periodDate.getFullYear(),
+      periodDate.getMonth(),
+      1,
+    )
+      .toISOString()
+      .split("T")[0];
+
+    // End of month (last day)
+    const periodEnd = new Date(
+      periodDate.getFullYear(),
+      periodDate.getMonth() + 1,
+      0,
+    )
+      .toISOString()
+      .split("T")[0];
+
+    // 4. Query all expense transactions for the period
+    // Using 'amount' field which is already in base currency for multi-currency transactions
+    const { data: expenses, error: fetchError } = await supabase
+      .from("transactions")
+      .select("amount")
+      .eq("user_id", user.id)
+      .eq("type", "expense")
+      .gte("date", periodStart)
+      .lte("date", periodEnd);
+
+    if (fetchError) {
+      console.error("Expenses fetch error:", fetchError);
+      return error("Failed to fetch expenses. Please try again.");
+    }
+
+    // 5. Calculate total expenses (sum of all expense amounts)
+    // Expense amounts are stored as positive values in the database
+    const totalExpenses =
+      expenses?.reduce(
+        (sum, transaction) => sum + Math.abs(transaction.amount),
+        0,
+      ) || 0;
+
+    const transactionCount = expenses?.length || 0;
+
+    // 6. Return result
+    return success({
+      totalExpenses: Math.round(totalExpenses * 100) / 100, // Round to 2 decimal places
+      period: {
+        start: periodStart,
+        end: periodEnd,
+      },
+      transactionCount,
+    });
+  } catch (err) {
+    console.error("Unexpected error in getTotalExpensesForPeriod:", err);
+    return error("An unexpected error occurred. Please try again.");
+  }
+}

@@ -37,21 +37,24 @@ export interface BudgetProgress {
 interface BudgetOverviewSummaryProps {
   budgets: BudgetProgress[];
   currency: string;
+  totalExpenses?: number;
 }
 
 export function BudgetOverviewSummary({
   budgets,
   currency,
+  totalExpenses,
 }: BudgetOverviewSummaryProps) {
   // Calculate totals
   const totalBudget = budgets.reduce(
     (sum, budget) => sum + budget.budget_amount,
     0,
   );
-  const totalSpent = budgets.reduce(
-    (sum, budget) => sum + budget.spent_amount,
-    0,
-  );
+  // Use totalExpenses from all transactions if provided, otherwise calculate from budgets
+  const totalSpent =
+    totalExpenses !== undefined
+      ? totalExpenses
+      : budgets.reduce((sum, budget) => sum + budget.spent_amount, 0);
 
   // Calculate overall utilization percentage
   const utilizationPercentage =

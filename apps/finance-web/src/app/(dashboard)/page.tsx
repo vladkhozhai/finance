@@ -112,8 +112,7 @@ export default async function DashboardPage() {
     ? paymentMethodsResult.data
     : [];
 
-  // Fetch total expenses for the current period
-  const now = new Date();
+  // Fetch total expenses for the current period (reuse 'now' from above)
   const currentPeriod = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   const expensesResult = await getTotalExpensesForPeriod(currentPeriod);
   const totalExpenses = expensesResult.success

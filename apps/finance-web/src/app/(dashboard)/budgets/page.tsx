@@ -78,10 +78,10 @@ function sortBudgets(
 export default function BudgetsPage() {
   const [budgets, setBudgets] = useState<BudgetProgress[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  // Initialize with current month in YYYY-MM format
+  // Initialize with current month in YYYY-MM-01 format (first day of month)
   const getCurrentMonth = () => {
     const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
   };
   const [filters, setFilters] = useState<BudgetFilterValues>({
     period: getCurrentMonth(),

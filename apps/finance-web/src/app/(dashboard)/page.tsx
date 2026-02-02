@@ -51,7 +51,8 @@ export default async function DashboardPage() {
 
   // Fetch active budgets using getBudgetProgress server action
   // This ensures correct date range filtering (budget.period to period_end)
-  const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM format
+  const now = new Date();
+  const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`; // YYYY-MM-01 format
   const budgetProgressResult = await getBudgetProgress({
     period: currentMonth,
   });

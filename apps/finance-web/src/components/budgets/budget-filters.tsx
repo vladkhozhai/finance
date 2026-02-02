@@ -187,9 +187,9 @@ export function BudgetFilters({
         <div className="space-y-2">
           <Label className="text-xs">Period</Label>
           <PeriodPicker
-            value={filters.period || ""}
+            value={filters.period || getCurrentMonth()}
             onChange={handlePeriodChange}
-            placeholder="All periods"
+            placeholder="Select period"
             className="h-9 w-full"
           />
         </div>

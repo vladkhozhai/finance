@@ -96,11 +96,20 @@ export function BudgetFilters({
   };
 
   const handleClearFilters = () => {
-    onFiltersChange({});
+    // Reset to current month instead of clearing all filters
+    const now = new Date();
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+    onFiltersChange({ period: currentMonth });
   };
 
+  // Check if filters are active (excluding current month period)
+  const getCurrentMonth = () => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+  };
+  const isCurrentMonth = filters.period === getCurrentMonth();
   const hasActiveFilters =
-    filters.categoryId || filters.tagId || filters.period;
+    filters.categoryId || filters.tagId || (filters.period && !isCurrentMonth);
 
   return (
     <div className="space-y-4">

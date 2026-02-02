@@ -128,7 +128,7 @@ function ResponsiveDialogContent({
         />
         <DialogPrimitive.Content
           className={cn(
-            "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg duration-200 sm:max-w-lg",
+            "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 flex flex-col w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] rounded-lg border p-0 shadow-lg duration-200 sm:max-w-lg overflow-hidden",
             className,
           )}
           {...props}
@@ -151,16 +151,14 @@ function ResponsiveDialogContent({
       <DrawerPrimitive.Overlay className="fixed inset-0 z-50 bg-black/50" />
       <DrawerPrimitive.Content
         className={cn(
-          "bg-background fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto max-h-[96vh] flex-col rounded-t-xl border-t overflow-hidden",
+          "bg-background fixed inset-x-0 bottom-0 z-50 mt-24 flex flex-col rounded-t-xl border-t overflow-hidden",
           className,
         )}
         {...props}
       >
         {/* Drawer handle for swipe gesture */}
         <div className="mx-auto mt-4 h-1.5 w-12 shrink-0 rounded-full bg-muted" />
-        <div className={cn("p-6 pb-8", scrollable && "flex-1 overflow-y-auto")}>
-          {children}
-        </div>
+        {children}
       </DrawerPrimitive.Content>
     </DrawerPrimitive.Portal>
   );

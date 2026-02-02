@@ -14,7 +14,7 @@ import { Plus, PlusCircle } from "lucide-react";
 import { CreateTransactionDialog } from "@/components/transactions/create-transaction-dialog";
 
 interface QuickActionButtonProps {
-  variant?: "desktop" | "mobile";
+  variant?: "desktop" | "mobile" | "fab";
 }
 
 export function QuickActionButton({
@@ -38,6 +38,24 @@ export function QuickActionButton({
           </div>
           {/* Label below the FAB */}
           <span className="text-xs font-medium text-primary mt-12">Add</span>
+        </button>
+      </CreateTransactionDialog>
+    );
+  }
+
+  if (variant === "fab") {
+    // Floating Action Button (fixed bottom-right corner)
+    return (
+      <CreateTransactionDialog>
+        <button
+          type="button"
+          className="fixed bottom-6 right-6 z-40 rounded-full bg-primary shadow-lg h-14 w-14 flex items-center justify-center hover:opacity-90 transition-all active:scale-95 hover:shadow-xl"
+          aria-label="Add transaction"
+        >
+          <Plus
+            className="h-7 w-7 text-primary-foreground"
+            aria-hidden="true"
+          />
         </button>
       </CreateTransactionDialog>
     );

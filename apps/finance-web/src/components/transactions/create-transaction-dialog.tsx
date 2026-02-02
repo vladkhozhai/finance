@@ -1,61 +1,33 @@
 /**
  * CreateTransactionDialog Component
  *
- * Dialog for creating a new transaction with full form validation.
+ * Dialog wrapper for the redesigned TransactionForm component.
+ * Handles data fetching and dialog state management.
  */
 
 "use client";
 
-import {
-  Calendar as CalendarIcon,
-  CreditCard,
-  FileText,
-  Loader2,
-  Plus,
-  X,
-} from "lucide-react";
+import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getCategories } from "@/app/actions/categories";
 import { getPaymentMethods } from "@/app/actions/payment-methods";
+import { getTags } from "@/app/actions/tags";
 import {
   getTemplates,
   type TemplateWithRelations,
 } from "@/app/actions/templates";
-import { createTransaction } from "@/app/actions/transactions";
-import { TagSelector } from "@/components/tags";
+import { TransactionForm } from "@/components/features/transactions/transaction-form";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   ResponsiveDialog,
   ResponsiveDialogContent,
-  ResponsiveDialogDescription,
-  ResponsiveDialogFooter,
-  ResponsiveDialogHeader,
-  ResponsiveDialogTitle,
   ResponsiveDialogTrigger,
 } from "@/components/ui/responsive-dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/lib/hooks/use-toast";
-import { cn } from "@/lib/utils";
-import { getCurrencySymbol } from "@/lib/utils/currency";
+import { toast } from "sonner";
 import type { Tables } from "@/types/database.types";
 
 type Category = Tables<"categories">;
+type Tag = Tables<"tags">;
 type PaymentMethod = Tables<"payment_methods">;
 
 interface CreateTransactionDialogProps {
@@ -68,42 +40,22 @@ export function CreateTransactionDialog({
   children,
 }: CreateTransactionDialogProps) {
   const [open, setOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
+  const [tags, setTags] = useState<Tag[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
-  const [isLoadingPaymentMethods, setIsLoadingPaymentMethods] = useState(true);
   const [templates, setTemplates] = useState<TemplateWithRelations[]>([]);
-  const [isLoadingTemplates, setIsLoadingTemplates] = useState(true);
-  const [selectedTemplate, setSelectedTemplate] =
-    useState<TemplateWithRelations | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [defaultCurrency] = useState<string>("USD"); // TODO: Get from user profile
 
-  // Form state
-  const [type, setType] = useState<string>("expense");
-  const [amount, setAmount] = useState("");
-  const [categoryId, setCategoryId] = useState("");
-  const [date, setDate] = useState<Date>(new Date());
-  const [description, setDescription] = useState("");
-  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
-  const [paymentMethodId, setPaymentMethodId] = useState<string>("");
-  const [selectedCurrency, setSelectedCurrency] = useState<string>("USD");
-  const [baseCurrency] = useState<string>("USD"); // TODO: Get from user profile
-
-  // Validation errors
-  const [errors, setErrors] = useState<Record<string, string>>({});
-
-  const { success: showSuccess, error: showError } = useToast();
-
-  // Fetch categories, payment methods, and templates
+  // Fetch all required data when dialog opens
   useEffect(() => {
     const fetchData = async () => {
-      setIsLoadingCategories(true);
-      setIsLoadingPaymentMethods(true);
-      setIsLoadingTemplates(true);
+      setIsLoading(true);
 
-      const [categoriesResult, paymentMethodsResult, templatesResult] =
+      const [categoriesResult, tagsResult, paymentMethodsResult, templatesResult] =
         await Promise.all([
           getCategories(),
+          getTags(),
           getPaymentMethods({ isActive: true, limit: 50, offset: 0 }),
           getTemplates(),
         ]);
@@ -111,25 +63,19 @@ export function CreateTransactionDialog({
       if (categoriesResult.success) {
         setCategories(categoriesResult.data || []);
       } else {
-        showError(categoriesResult.error || "Failed to load categories");
+        toast.error(categoriesResult.error || "Failed to load categories");
+      }
+
+      if (tagsResult.success) {
+        setTags(tagsResult.data || []);
+      } else {
+        toast.error(tagsResult.error || "Failed to load tags");
       }
 
       if (paymentMethodsResult.success) {
         setPaymentMethods(paymentMethodsResult.data || []);
-        // Set default payment method if available
-        const defaultPM = paymentMethodsResult.data?.find(
-          (pm) => pm.is_default,
-        );
-        if (defaultPM) {
-          setPaymentMethodId(defaultPM.id);
-          setSelectedCurrency(defaultPM.currency);
-        } else {
-          setSelectedCurrency(baseCurrency);
-        }
       } else {
-        showError(
-          paymentMethodsResult.error || "Failed to load payment methods",
-        );
+        toast.error(paymentMethodsResult.error || "Failed to load payment methods");
       }
 
       if (templatesResult.success) {
@@ -139,179 +85,17 @@ export function CreateTransactionDialog({
         setTemplates([]);
       }
 
-      setIsLoadingCategories(false);
-      setIsLoadingPaymentMethods(false);
-      setIsLoadingTemplates(false);
+      setIsLoading(false);
     };
 
     if (open) {
       fetchData();
     }
-  }, [open, showError, baseCurrency]);
+  }, [open]);
 
-  // Filter categories by type
-  const filteredCategories = categories.filter(
-    (category) => category.type === type,
-  );
-
-  // Apply template to form
-  const applyTemplate = (template: TemplateWithRelations) => {
-    setSelectedTemplate(template);
-
-    // Set type based on category type (if available)
-    if (template.category?.type) {
-      setType(template.category.type);
-    }
-
-    // Set amount (if template has fixed amount)
-    if (template.amount !== null) {
-      setAmount(template.amount.toString());
-    } else {
-      setAmount(""); // Variable price - user must enter
-    }
-
-    // Set category
-    if (template.category_id) {
-      setCategoryId(template.category_id);
-    }
-
-    // Set payment method and currency
-    if (template.payment_method_id) {
-      setPaymentMethodId(template.payment_method_id);
-      if (template.payment_method?.currency) {
-        setSelectedCurrency(template.payment_method.currency);
-      }
-    }
-
-    // Set description
-    if (template.description) {
-      setDescription(template.description);
-    }
-
-    // Set tags
-    if (template.template_tags && template.template_tags.length > 0) {
-      setSelectedTagIds(template.template_tags.map((tt) => tt.tag.id));
-    }
-  };
-
-  // Clear template selection
-  const clearTemplate = () => {
-    setSelectedTemplate(null);
-    setType("expense");
-    setAmount("");
-    setCategoryId("");
-    setDescription("");
-    setSelectedTagIds([]);
-
-    // Reset to default payment method if available
-    const defaultPM = paymentMethods.find((pm) => pm.is_default);
-    if (defaultPM) {
-      setPaymentMethodId(defaultPM.id);
-      setSelectedCurrency(defaultPM.currency);
-    } else {
-      setPaymentMethodId("");
-      setSelectedCurrency(baseCurrency);
-    }
-  };
-
-  // Reset category when type changes
-  useEffect(() => {
-    if (categoryId && !filteredCategories.find((c) => c.id === categoryId)) {
-      setCategoryId("");
-    }
-  }, [type, categoryId, filteredCategories]);
-
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-
-    // Amount validation
-    const amountNum = Number.parseFloat(amount);
-    if (!amount || Number.isNaN(amountNum) || amountNum <= 0) {
-      newErrors.amount = "Amount must be a positive number";
-    }
-
-    // Category validation
-    if (!categoryId) {
-      newErrors.categoryId = "Category is required";
-    }
-
-    // Description validation (max 500 chars)
-    if (description.length > 500) {
-      newErrors.description = "Description must be 500 characters or less";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handlePaymentMethodChange = (pmId: string) => {
-    setPaymentMethodId(pmId);
-    if (pmId === "none") {
-      setSelectedCurrency(baseCurrency);
-    } else {
-      const pm = paymentMethods.find((p) => p.id === pmId);
-      if (pm) {
-        setSelectedCurrency(pm.currency);
-      }
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    const result = await createTransaction({
-      amount: Number.parseFloat(amount),
-      type: type as "income" | "expense",
-      categoryId,
-      date: date.toISOString().split("T")[0],
-      description: description.trim() || undefined,
-      tagIds: selectedTagIds.length > 0 ? selectedTagIds : undefined,
-      paymentMethodId:
-        paymentMethodId === "none" || !paymentMethodId
-          ? undefined
-          : paymentMethodId,
-    });
-
-    setIsSubmitting(false);
-
-    if (result.success) {
-      showSuccess("Transaction created successfully");
-      handleClose();
-      onSuccess?.();
-    } else {
-      showError(result.error || "Failed to create transaction");
-    }
-  };
-
-  const handleClose = () => {
+  const handleSuccess = () => {
     setOpen(false);
-    // Reset form after dialog closes
-    setTimeout(() => {
-      setType("expense");
-      setAmount("");
-      setCategoryId("");
-      setDate(new Date());
-      setDescription("");
-      setSelectedTagIds([]);
-      setPaymentMethodId("");
-      setSelectedCurrency(baseCurrency);
-      setErrors({});
-      setSelectedTemplate(null);
-    }, 200);
-  };
-
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    }).format(date);
+    onSuccess?.();
   };
 
   return (
@@ -325,290 +109,23 @@ export function CreateTransactionDialog({
         )}
       </ResponsiveDialogTrigger>
       <ResponsiveDialogContent
-        className="max-w-lg max-h-[90vh] overflow-y-auto"
-        scrollable
+        className="max-w-lg h-[90vh] max-h-[90vh] p-0 flex flex-col overflow-hidden"
+        showCloseButton={false}
       >
-        <ResponsiveDialogHeader>
-          <ResponsiveDialogTitle>Create Transaction</ResponsiveDialogTitle>
-          <ResponsiveDialogDescription>
-            Add a new income or expense transaction to track your finances.
-          </ResponsiveDialogDescription>
-        </ResponsiveDialogHeader>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Template Selector */}
-          {templates.length > 0 && (
-            <div className="space-y-2">
-              <Label>Use Template (optional)</Label>
-              {selectedTemplate ? (
-                <div className="flex items-center gap-2 p-3 rounded-lg border bg-muted/50">
-                  <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">
-                      {selectedTemplate.name}
-                    </p>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {selectedTemplate.category?.name || "No category"}
-                      {selectedTemplate.amount !== null &&
-                        ` · ${selectedTemplate.amount}`}
-                    </p>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={clearTemplate}
-                    className="h-8 w-8 p-0 shrink-0"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              ) : (
-                <Select
-                  value=""
-                  onValueChange={(templateId) => {
-                    const template = templates.find((t) => t.id === templateId);
-                    if (template) {
-                      applyTemplate(template);
-                    }
-                  }}
-                  disabled={isLoadingTemplates}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a template to pre-fill..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {templates.map((template) => (
-                      <SelectItem key={template.id} value={template.id}>
-                        <div className="flex items-center gap-2">
-                          <FileText className="h-3.5 w-3.5" />
-                          <span>{template.name}</span>
-                          {template.amount !== null && (
-                            <span className="text-muted-foreground text-xs">
-                              ({template.amount})
-                            </span>
-                          )}
-                          {template.is_favorite && (
-                            <span className="text-yellow-500 text-xs">★</span>
-                          )}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            </div>
-          )}
-
-          {/* Type Selection */}
-          <div className="space-y-2">
-            <Label>Type</Label>
-            <RadioGroup value={type} onValueChange={(v) => setType(v as any)}>
-              <div className="flex gap-4">
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="income" id="create-type-income" />
-                  <Label
-                    htmlFor="create-type-income"
-                    className="font-normal cursor-pointer"
-                  >
-                    Income
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="expense" id="create-type-expense" />
-                  <Label
-                    htmlFor="create-type-expense"
-                    className="font-normal cursor-pointer"
-                  >
-                    Expense
-                  </Label>
-                </div>
-              </div>
-            </RadioGroup>
+        {isLoading ? (
+          <div className="flex items-center justify-center flex-1">
+            <p className="text-muted-foreground">Loading...</p>
           </div>
-
-          {/* Payment Method Selection */}
-          <div className="space-y-2">
-            <Label htmlFor="create-payment-method">
-              Payment Method (optional)
-            </Label>
-            <Select
-              value={paymentMethodId || "none"}
-              onValueChange={handlePaymentMethodChange}
-              disabled={isLoadingPaymentMethods}
-            >
-              <SelectTrigger id="create-payment-method">
-                <SelectValue placeholder="Select a payment method" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">
-                  <div className="flex items-center gap-2">
-                    <span className="text-muted-foreground">
-                      None (Base Currency)
-                    </span>
-                  </div>
-                </SelectItem>
-                {paymentMethods.map((pm) => (
-                  <SelectItem key={pm.id} value={pm.id}>
-                    <div className="flex items-center gap-2">
-                      <CreditCard className="h-3.5 w-3.5" />
-                      {pm.name} ({getCurrencySymbol(pm.currency)})
-                      {pm.is_default && (
-                        <span className="text-xs text-muted-foreground">
-                          (default)
-                        </span>
-                      )}
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Amount Input */}
-          <div className="space-y-2">
-            <Label htmlFor="create-amount">
-              Amount in {selectedCurrency}{" "}
-              <span className="text-destructive">*</span>
-            </Label>
-            <div className="relative">
-              <Input
-                id="create-amount"
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder={`0.00 ${getCurrencySymbol(selectedCurrency)}`}
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                className={cn("pr-12", errors.amount && "border-destructive")}
-              />
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none">
-                {getCurrencySymbol(selectedCurrency)}
-              </div>
-            </div>
-            {errors.amount && (
-              <p className="text-sm text-destructive">{errors.amount}</p>
-            )}
-            {selectedCurrency !== baseCurrency &&
-              amount &&
-              !Number.isNaN(Number.parseFloat(amount)) && (
-                <p className="text-xs text-muted-foreground">
-                  Amount will be converted to {baseCurrency} automatically based
-                  on current exchange rate
-                </p>
-              )}
-          </div>
-
-          {/* Category Selection */}
-          <div className="space-y-2">
-            <Label htmlFor="create-category">
-              Category <span className="text-destructive">*</span>
-            </Label>
-            <Select
-              value={categoryId}
-              onValueChange={setCategoryId}
-              disabled={isLoadingCategories}
-            >
-              <SelectTrigger
-                id="create-category"
-                className={cn(errors.categoryId && "border-destructive")}
-              >
-                <SelectValue placeholder="Select a category" />
-              </SelectTrigger>
-              <SelectContent>
-                {filteredCategories.map((category) => (
-                  <SelectItem key={category.id} value={category.id}>
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="h-3 w-3 rounded-full"
-                        style={{ backgroundColor: category.color }}
-                      />
-                      {category.name}
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {errors.categoryId && (
-              <p className="text-sm text-destructive">{errors.categoryId}</p>
-            )}
-          </div>
-
-          {/* Date Picker */}
-          <div className="space-y-2">
-            <Label>
-              Date <span className="text-destructive">*</span>
-            </Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start text-left font-normal"
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {formatDate(date)}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={date}
-                  onSelect={(d) => d && setDate(d)}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-
-          {/* Description */}
-          <div className="space-y-2">
-            <Label htmlFor="create-description">Description (optional)</Label>
-            <Textarea
-              id="create-description"
-              placeholder="Add a note about this transaction..."
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              maxLength={500}
-              rows={3}
-              className={cn(errors.description && "border-destructive")}
-            />
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>{errors.description || ""}</span>
-              <span>{description.length}/500</span>
-            </div>
-          </div>
-
-          {/* Tags */}
-          <div className="space-y-2">
-            <Label>Tags (optional)</Label>
-            <TagSelector
-              value={selectedTagIds}
-              onChange={setSelectedTagIds}
-              placeholder="Add tags..."
-            />
-          </div>
-
-          <ResponsiveDialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleClose}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Creating...
-                </>
-              ) : (
-                "Create Transaction"
-              )}
-            </Button>
-          </ResponsiveDialogFooter>
-        </form>
+        ) : (
+          <TransactionForm
+            categories={categories}
+            tags={tags}
+            paymentMethods={paymentMethods}
+            templates={templates}
+            defaultCurrency={defaultCurrency}
+            onSuccess={handleSuccess}
+          />
+        )}
       </ResponsiveDialogContent>
     </ResponsiveDialog>
   );

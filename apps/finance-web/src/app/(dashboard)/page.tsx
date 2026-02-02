@@ -14,6 +14,7 @@
 export const dynamic = "force-dynamic";
 
 import { Suspense } from "react";
+import { getBudgetProgress } from "@/app/actions/budgets";
 import { getPaymentMethodBalancesWithDetails } from "@/app/actions/dashboard";
 import { getTotalExpensesForPeriod } from "@/app/actions/transactions";
 import { BudgetOverviewSummary } from "@/components/budgets/budget-overview-summary";
@@ -48,89 +49,24 @@ export default async function DashboardPage() {
 
   const currency = profile?.currency || "USD";
 
-  // Fetch active budgets with category/tag info
+  // Fetch active budgets using getBudgetProgress server action
+  // This ensures correct date range filtering (budget.period to period_end)
   const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM format
-  const { data: budgets } = (await supabase
-    .from("budgets")
-    .select(
-      `
-      id,
-      amount,
-      category_id,
-      tag_id,
-      period,
-      categories(name, color),
-      tags(name)
-    `,
-    )
-    .eq("user_id", user.id)
-    .eq("period", `${currentMonth}-01`)) as {
-    data: Array<{
-      id: string;
-      amount: number;
-      category_id: string | null;
-      tag_id: string | null;
-      period: string;
-      categories: { name: string; color: string } | null;
-      tags: { name: string } | null;
-    }> | null;
-  };
+  const budgetProgressResult = await getBudgetProgress({
+    period: currentMonth,
+  });
 
-  // Calculate spent amount for each budget
-  const budgetsWithSpent = await Promise.all(
-    (budgets || []).map(async (budget) => {
-      let spent = 0;
+  const budgetProgressData = budgetProgressResult.success
+    ? budgetProgressResult.data || []
+    : [];
 
-      if (budget.category_id) {
-        // Budget for category
-        const { data: categoryTransactions } = (await supabase
-          .from("transactions")
-          .select("amount")
-          .eq("user_id", user.id)
-          .eq("category_id", budget.category_id)
-          .gte("date", budget.period)) as {
-          data: Array<{ amount: number }> | null;
-        };
-
-        spent =
-          categoryTransactions?.reduce((sum, t) => sum + t.amount, 0) || 0;
-      } else if (budget.tag_id) {
-        // Budget for tag
-        const { data: tagTransactions } = (await supabase
-          .from("transaction_tags")
-          .select("transactions(amount, date)")
-          .eq("tag_id", budget.tag_id)) as {
-          data: Array<{
-            transactions: { amount: number; date: string } | null;
-          }> | null;
-        };
-
-        spent =
-          tagTransactions
-            ?.filter((tt) => {
-              const txDate = tt.transactions?.date || "";
-              return txDate >= budget.period;
-            })
-            .reduce((sum, tt) => sum + (tt.transactions?.amount || 0), 0) || 0;
-      }
-
-      return {
-        id: budget.id,
-        name: budget.categories?.name || budget.tags?.name || "Unknown",
-        limit: budget.amount,
-        spent,
-        color: budget.categories?.color || "#3b82f6",
-      };
-    }),
-  );
-
-  // Transform budget data for the overview summary component
-  const budgetProgressData = budgetsWithSpent.map((budget) => ({
+  // Transform budget progress data for ActiveBudgets component
+  const budgetsWithSpent = budgetProgressData.map((budget) => ({
     id: budget.id,
-    budget_amount: budget.limit,
-    spent_amount: budget.spent,
-    spent_percentage: (budget.spent / budget.limit) * 100,
-    is_overspent: budget.spent > budget.limit,
+    name: budget.category?.name || budget.tag?.name || "Unknown",
+    limit: budget.budget_amount,
+    spent: budget.spent_amount,
+    color: budget.category?.color || "#3b82f6",
   }));
 
   // Fetch expense breakdown by category

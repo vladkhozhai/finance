@@ -78,7 +78,14 @@ function sortBudgets(
 export default function BudgetsPage() {
   const [budgets, setBudgets] = useState<BudgetProgress[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [filters, setFilters] = useState<BudgetFilterValues>({});
+  // Initialize with current month in YYYY-MM format
+  const getCurrentMonth = () => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  };
+  const [filters, setFilters] = useState<BudgetFilterValues>({
+    period: getCurrentMonth(),
+  });
   const [sortBy, setSortBy] = useState<SortOption>("default");
   const [currency, setCurrency] = useState<string>("USD");
   const [totalExpenses, setTotalExpenses] = useState<number | undefined>(

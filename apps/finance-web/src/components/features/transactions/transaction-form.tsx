@@ -15,10 +15,11 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ChevronDown, ChevronUp, CreditCard, Plus, X } from "lucide-react";
+import { ChevronDown, ChevronUp, CreditCard, Plus, X, Search } from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { createTag } from "@/app/actions/tags";
 import { createTransaction } from "@/app/actions/transactions";
 import { type TemplateWithRelations } from "@/app/actions/templates";
 import { Badge } from "@/components/ui/badge";
@@ -65,7 +66,12 @@ export function TransactionForm({
   >(undefined);
   const [showMoreOptions, setShowMoreOptions] = useState(false);
   const [showAllCategories, setShowAllCategories] = useState(false);
+  const [showAllTemplates, setShowAllTemplates] = useState(false);
+  const [showAllTags, setShowAllTags] = useState(false);
+  const [tagSearchQuery, setTagSearchQuery] = useState("");
+  const [isCreatingTag, setIsCreatingTag] = useState(false);
   const [amountDisplay, setAmountDisplay] = useState("");
+  const [availableTags, setAvailableTags] = useState<Tag[]>(tags);
 
   const {
     register,
@@ -101,9 +107,29 @@ export function TransactionForm({
 
   // Get templates for quick access (favorites first, then recent non-favorites)
   const favoriteTemplates = templates.filter((t) => t.is_favorite).slice(0, 5);
-  const displayTemplates = favoriteTemplates.length > 0
+  const defaultTemplates = favoriteTemplates.length > 0
     ? favoriteTemplates
     : templates.slice(0, 5); // Fallback to first 5 templates if no favorites
+  const displayTemplates = showAllTemplates ? templates : defaultTemplates;
+
+  // Filter tags by search query
+  const filteredTags = availableTags.filter((tag) =>
+    tag.name.toLowerCase().includes(tagSearchQuery.toLowerCase()),
+  );
+
+  // Limit visible tags (first 8, then "More" button)
+  const MAX_VISIBLE_TAGS = 8;
+  const visibleTags = showAllTags
+    ? filteredTags
+    : filteredTags.slice(0, MAX_VISIBLE_TAGS);
+  const hasMoreTags = filteredTags.length > MAX_VISIBLE_TAGS;
+
+  // Check if we can create a new tag
+  const canCreateTag =
+    tagSearchQuery.trim() &&
+    !availableTags.some(
+      (tag) => tag.name.toLowerCase() === tagSearchQuery.trim().toLowerCase(),
+    );
 
   // Format amount with thousands separator
   const formatAmount = (value: string) => {
@@ -171,6 +197,37 @@ export function TransactionForm({
     setValue("paymentMethodId", pmId);
   };
 
+  const handleCreateTag = async () => {
+    if (!canCreateTag || isCreatingTag) return;
+
+    setIsCreatingTag(true);
+    const result = await createTag({ name: tagSearchQuery.trim() });
+
+    if (result.success) {
+      // Add new tag to available tags
+      const newTag: Tag = {
+        id: result.data.id,
+        name: result.data.name,
+        user_id: "", // Not needed for UI
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      setAvailableTags([...availableTags, newTag]);
+
+      // Auto-select the newly created tag
+      const newTagIds = [...selectedTagIds, result.data.id];
+      setSelectedTagIds(newTagIds);
+      setValue("tagIds", newTagIds);
+
+      // Clear search query
+      setTagSearchQuery("");
+      toast.success(`Tag "${result.data.name}" created`);
+    } else {
+      toast.error(result.error);
+    }
+    setIsCreatingTag(false);
+  };
+
   const onSubmit = (data: CreateTransactionInput) => {
     startTransition(async () => {
       const result = await createTransaction(data);
@@ -220,7 +277,7 @@ export function TransactionForm({
       </div>
 
       {/* Fixed Header: Templates Row (if any templates exist) */}
-      {displayTemplates.length > 0 && (
+      {templates.length > 0 && (
         <div className="flex-shrink-0 px-4 py-2">
           <div className="flex gap-2 overflow-x-auto scrollbar-hide">
             {displayTemplates.map((template) => (
@@ -233,6 +290,16 @@ export function TransactionForm({
                 {template.name}
               </button>
             ))}
+            {/* Show All button if there are more templates */}
+            {templates.length > displayTemplates.length && !showAllTemplates && (
+              <button
+                type="button"
+                onClick={() => setShowAllTemplates(true)}
+                className="shrink-0 px-3 py-1.5 text-xs font-medium rounded-full border border-dashed border-border bg-background hover:bg-accent transition-colors text-muted-foreground"
+              >
+                Show all ({templates.length})
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -342,16 +409,49 @@ export function TransactionForm({
         </div>
 
         {/* Tags Section */}
-        {tags.length > 0 && (
-          <div className="py-3">
-            <Label className="text-xs text-muted-foreground mb-2 block">
-              Tags (optional)
-            </Label>
+        <div className="py-3">
+          <Label className="text-xs text-muted-foreground mb-2 block">
+            Tags (optional)
+          </Label>
+
+          {/* Tag Search/Create Input */}
+          <div className="relative mb-2">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Search or create tag..."
+              value={tagSearchQuery}
+              onChange={(e) => setTagSearchQuery(e.target.value)}
+              className="pl-9 pr-3 h-9 text-sm"
+            />
+          </div>
+
+          {/* Create Tag Button (shown if search query matches no existing tags) */}
+          {canCreateTag && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleCreateTag}
+              disabled={isCreatingTag}
+              className="w-full mb-2 justify-start"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              {isCreatingTag
+                ? "Creating..."
+                : `Create "${tagSearchQuery.trim()}"`}
+            </Button>
+          )}
+
+          {/* Tag Badges */}
+          {visibleTags.length > 0 ? (
             <div className="flex flex-wrap gap-2">
-              {tags.slice(0, 8).map((tag) => (
+              {visibleTags.map((tag) => (
                 <Badge
                   key={tag.id}
-                  variant={selectedTagIds.includes(tag.id) ? "default" : "outline"}
+                  variant={
+                    selectedTagIds.includes(tag.id) ? "default" : "outline"
+                  }
                   className="cursor-pointer"
                   onClick={() => handleTagToggle(tag.id)}
                 >
@@ -361,15 +461,27 @@ export function TransactionForm({
                   )}
                 </Badge>
               ))}
-              {tags.length > 8 && (
-                <Badge variant="outline" className="cursor-pointer">
-                  <Plus className="h-3 w-3 mr-1" />
-                  More
+
+              {/* More Tags Button */}
+              {hasMoreTags && !showAllTags && (
+                <Badge
+                  variant="outline"
+                  className="cursor-pointer"
+                  onClick={() => setShowAllTags(true)}
+                >
+                  <Plus className="h-3 w-3 mr-1" />+
+                  {filteredTags.length - MAX_VISIBLE_TAGS} more
                 </Badge>
               )}
             </div>
-          </div>
-        )}
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              {tagSearchQuery
+                ? "No tags found"
+                : "No tags yet. Create one above!"}
+            </p>
+          )}
+        </div>
 
         {/* Collapsible "More Options" Section */}
         <div className="py-2">
